@@ -1,47 +1,55 @@
 package main
 
 import (
-	"fmt"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 	"net/http"
-
-	"github.com/PuerkitoBio/goquery"
+	"github.com/msergo/eki_telegram_bot/src/translation_fetcher"
+	"os"
 )
-
-const (
-	baseURL             = "http://www.eki.ee/dict/evs/index.cgi?Q="
-	cartSelector        = ".tervikart"
-	paragraphSelector   = ".leitud_id"
-	translationSelector = ".x_x"
-)
-
-// GetTranslations fnbad a
-func GetTranslations() {
-	// Request the HTML page.
-	res, err := http.Get(fmt.Sprintf("%s%s", baseURL, "saama"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
-	}
-
-	// Load the HTML document
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Find the review items
-	doc.Find(cartSelector).Each(func(i int, cart *goquery.Selection) {
-		fmt.Println(cart.Find(paragraphSelector).Text())
-		cart.Find(translationSelector).Each(func(i int, translation *goquery.Selection) {
-			fmt.Println(translation.Text())
-		})
-	})
-}
 
 func main() {
-	GetTranslations()
+	//result := translation_fetcher.GetTranslations("saama")
+	//fmt.Print(result)
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bot.Debug = true
+
+	log.Printf("Authorized on account %s", bot.Self.UserName)
+
+	_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_ADDRESS")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	info, err := bot.GetWebhookInfo()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if info.LastErrorDate != 0 {
+		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+	}
+	updates := bot.ListenForWebhook("/" + os.Getenv("UUID_TOKEN"))
+	go http.ListenAndServe("0.0.0.0:" + os.Getenv("PORT"), nil)
+
+	for update := range updates {
+		articles := translation_fetcher.GetTranslations(update.Message.Text)
+		for i := 0; i < len(articles); i++ {
+			article := articles[i]
+			articleHeader := article.ArticleHeader
+			articleText := ""
+			for j := 0; j < len(article.Meanings); j ++ {
+				articleText += articles[i].Meanings[j].Translation + "\r\n"
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, articleHeader+"\r\n"+articleText)
+			//msg.ReplyToMessageID = update.Message.MessageID
+			if _, err := bot.Send(msg); err != nil {
+				log.Panic(err)
+			}
+
+		}
+	}
 }
