@@ -52,7 +52,6 @@ func GetSingleArticle(node *html.Node) string {
 			examplesEst = examplesEst[:0] //clean buff
 		}
 	})
-	fmt.Println(strings.Join(examples, "\r\n"))
 	return fmt.Sprintf("<b>%s</b>\r\n"+
 		"%s\r\n"+
 		"%s",

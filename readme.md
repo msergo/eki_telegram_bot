@@ -10,4 +10,3 @@ WEBHOOK_ADDRESS
  * automatic deployment
  * generate nice messages
  * optimize code
- * add tests
