@@ -6,7 +6,7 @@ jobs:
 
     working_directory: /go/src/github.com/msergo/eki_telegram_bot
     steps:
-#      - setup_remote_docker
+      - setup_remote_docker
       - checkout
       - run: docker build -t msergo/eki_telegram_bot .
       - run:
