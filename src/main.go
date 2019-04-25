@@ -9,8 +9,6 @@ import (
 )
 
 func main() {
-	//result := translation_fetcher.GetTranslations("saama")
-	//fmt.Print(result)
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
@@ -32,24 +30,17 @@ func main() {
 		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
 	updates := bot.ListenForWebhook("/" + os.Getenv("UUID_TOKEN"))
-	go http.ListenAndServe("0.0.0.0:" + os.Getenv("PORT"), nil)
+	go http.ListenAndServe("0.0.0.0:"+os.Getenv("PORT"), nil)
 
 	for update := range updates {
-		articles := translation_fetcher.GetTranslations(update.Message.Text)
-		for i := 0; i < len(articles); i++ {
-			article := articles[i]
-			articleHeader := article.ArticleHeader
-			articleText := ""
-			for j := 0; j < len(article.Meanings); j ++ {
-				articleText += articles[i].Meanings[j].Translation + "\r\n"
-			}
+		articles := translation_fetcher.GetArticles(update.Message.Text)
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, articleHeader+"\r\n"+articleText)
-			//msg.ReplyToMessageID = update.Message.MessageID
+		for i := 0; i < len(articles); i++ {
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[i])
+			msg.ParseMode = "html"
 			if _, err := bot.Send(msg); err != nil {
 				log.Panic(err)
 			}
-
 		}
 	}
 }
