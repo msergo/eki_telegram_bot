@@ -4,7 +4,8 @@ jobs:
     docker:
       - image: circleci/golang:1.9
 
-    working_directory: /go/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
+    working_directory: /go/src/github.com/msergo/eki_telegram_bot
     steps:
+      - setup_remote_docker
       - checkout
-      - run: docker build -t $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run: docker build -t msergo/eki_telegram_bot .
