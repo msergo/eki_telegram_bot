@@ -20,6 +20,6 @@ jobs:
       - run:
           name: Push to registry
           command:
-            /usr/bin/heroku container:push web --app $HEROKU_APP && \
-            /usr/bin/heroku container:release web --app $HEROKU_APP
+            /usr/local/bin/heroku container:push web --app $HEROKU_APP && \
+            /usr/local/bin/heroku container:release web --app $HEROKU_APP
 
