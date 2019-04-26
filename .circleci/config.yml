@@ -9,17 +9,17 @@ jobs:
       - setup_remote_docker
       - checkout
       - run: docker build -t msergo/eki_telegram_bot .
-      - run:
-          name: Make auth config
-          command: |
-            touch ~/.netrc && \
-            curl https://cli-assets.heroku.com/install.sh | sh && \
-            echo machine api.heroku.com >> ~/.netrc && \
-            echo "  login $HEROKU_USER" >> ~/.netrc && \
-            echo "  password $HEROKU_KEY" >> ~/.netrc
-            cat  ~/.netrc
-      - run:
-          name: Push to registry
-          command:
-            /usr/local/bin/heroku container:push web --app $HEROKU_APP && \
-            /usr/local/bin/heroku container:release web --app $HEROKU_APP
+#      - run:
+#          name: Make auth config
+#          command: |
+#            touch ~/.netrc && \
+#            curl https://cli-assets.heroku.com/install.sh | sh && \
+#            echo machine api.heroku.com >> ~/.netrc && \
+#            echo "  login $HEROKU_USER" >> ~/.netrc && \
+#            echo "  password $HEROKU_KEY" >> ~/.netrc
+#            cat  ~/.netrc
+#      - run:
+#          name: Push to registry
+#          command:
+#            /usr/local/bin/heroku container:push web --app $HEROKU_APP && \
+#            /usr/local/bin/heroku container:release web --app $HEROKU_APP
