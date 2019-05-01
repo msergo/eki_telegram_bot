@@ -53,11 +53,11 @@ func GetSingleArticle(node *html.Node) string {
 		}
 	})
 	return fmt.Sprintf("<b>%s</b>\r\n"+
-		"%s\r\n"+
+		//"%s\r\n"+ // remove examples for now
 		"%s",
 		useCase,
 		strings.Join(translations, "\r\n"),
-		strings.Join(examples, "\r\n"),
+		//strings.Join(examples, "\r\n"), // remove examples for now
 	)
 }
 func GetArticles(word string) []string {
