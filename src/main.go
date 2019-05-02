@@ -85,49 +85,6 @@ func main() {
 	}
 }
 
-//func MakeReplyMarkup(keyword string, buttonsLen int) tgbotapi.InlineKeyboardMarkup {
-//	var buttons []tgbotapi.InlineKeyboardButton
-//	for i := 0; i < buttonsLen; i++ {
-//		callbackData := keyword + "," + strconv.Itoa(i) //probleem,1
-//		but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
-//		buttons = append(buttons, but)
-//	}
-//	return tgbotapi.NewInlineKeyboardMarkup(buttons)
-//}
-
-func MakeReplyMarkupNice(keyword string, buttonsLen int, indexFrom int) tgbotapi.InlineKeyboardMarkup {
-	var endPos int
-	var startPos int
-	if (buttonsLen <= 5) {
-		startPos = 0
-		endPos = buttonsLen
-	} else if buttonsLen > 5 {
-		startPos = indexFrom
-		endPos = startPos + 5
-
-		if endPos > buttonsLen {
-			endPos = buttonsLen
-			startPos = endPos - 5
-		}
-	}
-	var buttons []tgbotapi.InlineKeyboardButton
-	for i := startPos; i < endPos; i++ {
-		callbackData := keyword + "," + strconv.Itoa(i) //probleem,1
-		but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
-		buttons = append(buttons, but)
-	}
-
-	if (startPos > 0) {
-		buttons[0].Text = "<<" + buttons[0].Text
-	}
-
-	if (endPos < buttonsLen) {
-		buttons[len(buttons)-1].Text += ">>"
-	}
-
-	return tgbotapi.NewInlineKeyboardMarkup(buttons)
-}
-
 func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.InlineKeyboardMarkup {
 	var startPos int
 	var endPos int
@@ -142,7 +99,7 @@ func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.In
 		startPos = 0
 		endPos = buttonsLen
 	} else if index-2 >= 0 && index+2 <= buttonsLen {
-		startPos = index - 2
+		startPos = index - 3
 		endPos = index + 2
 	} else if index - 2 < 0 {
 		startPos = 0
@@ -151,6 +108,7 @@ func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.In
 		startPos = buttonsLen - 5
 		endPos = buttonsLen
 	}
+
 	buttons = buttons[startPos:endPos]
 	if (startPos > 0) {
 		buttons[0].Text = "<<" + buttons[0].Text
