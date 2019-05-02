@@ -14,7 +14,7 @@ func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.In
 		but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
 		buttons = append(buttons, but)
 	}
-
+	buttons[index].Text = ">" + buttons[index].Text + "<"
 	if buttonsLen <= 5 {
 		startPos = 0
 		endPos = buttonsLen
@@ -30,11 +30,11 @@ func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.In
 	}
 
 	buttons = buttons[startPos:endPos]
-	if (startPos > 0) {
+	if startPos > 0 {
 		buttons[0].Text = "<<" + buttons[0].Text
 	}
 
-	if (endPos < buttonsLen) {
+	if endPos < buttonsLen {
 		buttons[len(buttons)-1].Text += ">>"
 	}
 
