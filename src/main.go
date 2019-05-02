@@ -11,11 +11,9 @@ import (
 	"strings"
 )
 
-//var articleStore []string
-
 func main() {
 	redis := redis_worker.InitRedisWorker()
-	_, err:= redis.Ping()
+	_, err := redis.Ping()
 	if err != nil {
 		log.Fatalf("Redis connecting error %s", err)
 	}
@@ -46,28 +44,22 @@ func main() {
 
 	for update := range updates {
 		if update.Message == nil {
-			//articleIndex, _ := strconv.ParseInt(update.CallbackQuery.Data, 10, 64)
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
 			conf.MessageID = update.CallbackQuery.Message.MessageID
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
-			key := strings.Split(update.CallbackQuery.Data, ",")
-			index, _ := strconv.ParseInt(key[1], 10, 64)
-			conf.Text = redis.GetArticleByIndex(key[0], index)
+			keysArr := strings.Split(update.CallbackQuery.Data, ",")
+			keyword := keysArr[0]
+			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
+			indexInt, _ := strconv.Atoi(keysArr[1])
+			conf.Text = redis.GetArticleByIndex(keyword, index)
 			buttons = buttons[:0]
-			buttonsLen := redis.GetArticlesLen(key[0])
-			// TODO move to nice func
+			buttonsLen := redis.GetArticlesLen(keyword)
 			if (buttonsLen > 1) {
-				for i := 0; i < buttonsLen; i++ {
-					callbackData := key[0] + "," + strconv.Itoa(i) //probleem,1
-					but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
-					buttons = append(buttons, but)
-				}
-				kbMarkup := tgbotapi.NewInlineKeyboardMarkup(buttons)
-				conf.ReplyMarkup = &kbMarkup
+				replyMarkup := MakeReplyMarkupNice(keyword, buttonsLen, indexInt)
+				conf.ReplyMarkup = &replyMarkup
 			}
 
-			//editedKbd := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, kbMarkup)
 			if _, err := bot.Send(conf); err != nil {
 				log.Print(err)
 			}
@@ -84,16 +76,54 @@ func main() {
 		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
 		if (len(articles) > 1) {
-			for i := 0; i < len(articles); i++ {
-				callbackData := update.Message.Text + "," + strconv.Itoa(i) //probleem,1
-				but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
-				buttons = append(buttons, but)
-			}
-			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
+			msg.ReplyMarkup = MakeReplyMarkupNice(update.Message.Text, len(articles), 0)
 		}
 		msg.ParseMode = "html"
 		if _, err := bot.Send(msg); err != nil {
 			log.Panic(err)
 		}
 	}
+}
+
+//func MakeReplyMarkup(keyword string, buttonsLen int) tgbotapi.InlineKeyboardMarkup {
+//	var buttons []tgbotapi.InlineKeyboardButton
+//	for i := 0; i < buttonsLen; i++ {
+//		callbackData := keyword + "," + strconv.Itoa(i) //probleem,1
+//		but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
+//		buttons = append(buttons, but)
+//	}
+//	return tgbotapi.NewInlineKeyboardMarkup(buttons)
+//}
+
+func MakeReplyMarkupNice(keyword string, buttonsLen int, indexFrom int) tgbotapi.InlineKeyboardMarkup {
+	var endPos int
+	var startPos int
+	if (buttonsLen <= 5) {
+		startPos = 0
+		endPos = buttonsLen
+	} else if buttonsLen > 5 {
+		startPos = indexFrom
+		endPos = startPos + 5
+
+		if endPos > buttonsLen {
+			endPos = buttonsLen
+			startPos = endPos - 5
+		}
+	}
+	var buttons []tgbotapi.InlineKeyboardButton
+	for i := startPos; i < endPos; i++ {
+		callbackData := keyword + "," + strconv.Itoa(i) //probleem,1
+		but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
+		buttons = append(buttons, but)
+	}
+
+	if (startPos > 0) {
+		buttons[0].Text = "<<" +  buttons[0].Text
+	}
+
+	if (endPos < buttonsLen) {
+		buttons[len(buttons)-1].Text += ">>"
+	}
+
+	return tgbotapi.NewInlineKeyboardMarkup(buttons)
 }
