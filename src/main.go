@@ -10,6 +10,7 @@ import (
 	"github.com/msergo/eki_telegram_bot/src/redis_worker"
 	"strings"
 	"github.com/msergo/eki_telegram_bot/src/reply_markup_maker"
+	"io"
 )
 
 func main() {
@@ -39,6 +40,9 @@ func main() {
 		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
 	updates := bot.ListenForWebhook("/" + os.Getenv("UUID_TOKEN"))
+	http.HandleFunc("/ping", func(w http.ResponseWriter, req *http.Request) {
+		io.WriteString(w, "pong")
+	})
 	go http.ListenAndServe("0.0.0.0:"+os.Getenv("PORT"), nil)
 
 	var buttons []tgbotapi.InlineKeyboardButton
