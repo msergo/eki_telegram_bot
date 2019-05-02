@@ -1,4 +1,4 @@
-package reply_markup_maker
+package main
 
 import (
 	"testing"

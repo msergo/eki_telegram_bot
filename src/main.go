@@ -4,16 +4,13 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"log"
 	"net/http"
-	"github.com/msergo/eki_telegram_bot/src/translation_fetcher"
 	"os"
 	"strconv"
-	"github.com/msergo/eki_telegram_bot/src/redis_worker"
 	"strings"
-	"github.com/msergo/eki_telegram_bot/src/reply_markup_maker"
 )
 
 func main() {
-	redis := redis_worker.InitRedisWorker()
+	redis := InitRedisWorker()
 	_, err := redis.Ping()
 	if err != nil {
 		log.Fatalf("Redis connecting error %s", err)
@@ -57,7 +54,7 @@ func main() {
 			buttons = buttons[:0]
 			buttonsLen := redis.GetArticlesLen(keyword)
 			if buttonsLen > 1 {
-				replyMarkup := reply_markup_maker.MakeReplyMarkupSmart(keyword, buttonsLen, indexInt)
+				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, indexInt)
 				conf.ReplyMarkup = &replyMarkup
 			}
 
@@ -71,13 +68,13 @@ func main() {
 		var articles []string
 		articles = redis.GetAllArticles(update.Message.Text)
 		if len(articles) == 0 {
-			articles = translation_fetcher.GetArticles(update.Message.Text)
+			articles = GetArticles(update.Message.Text)
 			redis.StoreArticlesSet(update.Message.Text, articles)
 		}
 		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
 		if len(articles) > 1 {
-			msg.ReplyMarkup = reply_markup_maker.MakeReplyMarkupSmart(update.Message.Text, len(articles), 0)
+			msg.ReplyMarkup = MakeReplyMarkupSmart(update.Message.Text, len(articles), 0)
 		}
 		msg.ParseMode = "html"
 		if _, err := bot.Send(msg); err != nil {

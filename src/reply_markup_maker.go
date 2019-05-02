@@ -1,4 +1,4 @@
-package reply_markup_maker
+package main
 
 import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
