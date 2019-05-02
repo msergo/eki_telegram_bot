@@ -15,6 +15,10 @@ import (
 
 func main() {
 	redis := redis_worker.InitRedisWorker()
+	_, err:= redis.Ping()
+	if err != nil {
+		log.Fatalf("Redis connecting error %s", err)
+	}
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)

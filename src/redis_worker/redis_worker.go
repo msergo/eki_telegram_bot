@@ -12,7 +12,7 @@ type RedisWorker struct {
 
 func InitRedisWorker() RedisWorker {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "0.0.0.0:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -21,7 +21,7 @@ func InitRedisWorker() RedisWorker {
 
 func (r RedisWorker) Ping() (response string, error error) {
 	r.client = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "0.0.0.0:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
