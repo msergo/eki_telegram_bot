@@ -7,20 +7,14 @@ import (
 	"github.com/msergo/eki_telegram_bot/src/translation_fetcher"
 	"os"
 	"strconv"
+	"github.com/msergo/eki_telegram_bot/src/redis_worker"
+	"strings"
 )
 
-//var replykeyboard = tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
-//	tgbotapi.NewInlineKeyboardButtonData("<<<", "456"),
-//	tgbotapi.NewInlineKeyboardButtonData(">>>", "456"),
-//))
-//
-//
-//func addButton(text string, dataIndex string) tgbotapi.InlineKeyboardButton {
-//	return tgbotapi.NewInlineKeyboardButtonData(text, dataIndex)
-//}
-var articleStore []string
+//var articleStore []string
 
 func main() {
+	redis := redis_worker.InitRedisWorker()
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
 		log.Fatal(err)
@@ -48,20 +42,27 @@ func main() {
 
 	for update := range updates {
 		if update.Message == nil {
-			articleIndex, _ := strconv.ParseInt(update.CallbackQuery.Data, 10, 64)
+			//articleIndex, _ := strconv.ParseInt(update.CallbackQuery.Data, 10, 64)
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
 			conf.MessageID = update.CallbackQuery.Message.MessageID
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
-			conf.Text = articleStore[articleIndex]
-			//editedTextMsg := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, articleStore[articleIndex])
+			key := strings.Split(update.CallbackQuery.Data, ",")
+			index, _ := strconv.ParseInt(key[1], 10, 64)
+			conf.Text = redis.GetArticleByIndex(key[0], index)
 			buttons = buttons[:0]
-			for i := 0; i < len(articleStore); i++ {
-				but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), strconv.Itoa(i))
-				buttons = append(buttons, but)
+			buttonsLen := redis.GetArticlesLen(key[0])
+			// TODO move to nice func
+			if (buttonsLen > 1) {
+				for i := 0; i < buttonsLen; i++ {
+					callbackData := key[0] + "," + strconv.Itoa(i) //probleem,1
+					but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
+					buttons = append(buttons, but)
+				}
+				kbMarkup := tgbotapi.NewInlineKeyboardMarkup(buttons)
+				conf.ReplyMarkup = &kbMarkup
 			}
-			kbMarkup := tgbotapi.NewInlineKeyboardMarkup(buttons)
-			conf.ReplyMarkup = &kbMarkup
+
 			//editedKbd := tgbotapi.NewEditMessageReplyMarkup(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, kbMarkup)
 			if _, err := bot.Send(conf); err != nil {
 				log.Print(err)
@@ -70,41 +71,25 @@ func main() {
 			bot.AnswerCallbackQuery(callbackConfig)
 			continue
 		}
-
-		articles := translation_fetcher.GetArticles(update.Message.Text)
-		articleStore = articles
+		var articles []string
+		articles = redis.GetAllArticles(update.Message.Text)
+		if (len(articles) == 0) {
+			articles = translation_fetcher.GetArticles(update.Message.Text)
+			redis.StoreArticlesSet(update.Message.Text, articles)
+		}
 		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
-		for i := 0; i < len(articles); i++ {
-			but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), strconv.Itoa(i))
-			buttons = append(buttons, but)
+		if (len(articles) > 1) {
+			for i := 0; i < len(articles); i++ {
+				callbackData := update.Message.Text + "," + strconv.Itoa(i) //probleem,1
+				but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
+				buttons = append(buttons, but)
+			}
+			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
 		}
-		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(buttons)
 		msg.ParseMode = "html"
 		if _, err := bot.Send(msg); err != nil {
 			log.Panic(err)
 		}
-
-		//if update.Message == nil {
-		//	fmt.Println("aa")
-		//
-		//	ed := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, "xxxxx")
-		//	if _, err := bot.Send(ed); err != nil {
-		//		log.Panic(err)
-		//	}
-		//	continue
-		//} else {
-		//
-		//	articles := translation_fetcher.GetArticles(update.Message.Text)
-		//	for i := 0; i < len(articles); i++ {
-		//		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[i])
-		//		msg.ParseMode = "html"
-		//		msg.ReplyMarkup = replykeyboard
-		//		if _, err := bot.Send(msg); err != nil {
-		//			log.Panic(err)
-		//		}
-		//	}
-		//}
-
 	}
 }

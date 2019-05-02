@@ -10,8 +10,9 @@ RUN cd $GOPATH/src/github.com/msergo/eki_telegram_bot && \
 WORKDIR $GOPATH/src/
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go/src/github.com/msergo/eki_telegram_bot/cmd/main github.com/msergo/eki_telegram_bot/src
 
-FROM alpine:3.7
+FROM msergo/redis_go:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=0 /go/src/github.com/msergo/eki_telegram_bot/cmd/main .
+ENTRYPOINT "/bin/sh"
 CMD ["./main"]
