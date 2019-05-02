@@ -14,5 +14,4 @@ FROM msergo/redis_go:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=0 /go/src/github.com/msergo/eki_telegram_bot/cmd/main .
-ENTRYPOINT "/bin/sh"
 CMD ["./main"]
