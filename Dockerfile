@@ -1,5 +1,4 @@
 FROM iron/go:dev
-RUN echo $GOPATH/src/github.com/msergo/eki_telegram_bot
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 RUN mkdir -p $GOPATH/src/github.com/msergo/eki_telegram_bot
 COPY . $GOPATH/src/github.com/msergo/eki_telegram_bot
@@ -14,4 +13,6 @@ FROM msergo/redis_go:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=0 /go/src/github.com/msergo/eki_telegram_bot/cmd/main .
-CMD ["./main"]
+COPY run.sh .
+RUN chmod +x run.sh
+CMD ["./run.sh", "./main"]
