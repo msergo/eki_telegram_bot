@@ -52,3 +52,36 @@ func TestMakeReplyMarkupNice_len6_start5(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestMakeReplyMarkupSmart_len5(t *testing.T) {
+	articlesLen := 5
+	kbd := MakeReplyMarkupSmart("abc", articlesLen, 5)
+	if len(kbd.InlineKeyboard[0]) != 5 {
+		t.Fail()
+	}
+}
+
+func TestMakeReplyMarkupSmart_len7_index1(t *testing.T) {
+	articlesLen := 7
+	kbd := MakeReplyMarkupSmart("abc", articlesLen, 1)
+	if len(kbd.InlineKeyboard[0]) != 5 {
+		t.Fail()
+	}
+	if kbd.InlineKeyboard[0][0].Text != "0" && kbd.InlineKeyboard[0][4].Text != "4>>" {
+		t.Fail()
+	}
+
+
+}
+
+func TestMakeReplyMarkupSmart_len7_index6(t *testing.T) {
+	articlesLen := 7
+	kbd := MakeReplyMarkupSmart("abc", articlesLen, 6)
+	if len(kbd.InlineKeyboard[0]) != 5 {
+		t.Fail()
+	}
+
+	if kbd.InlineKeyboard[0][0].Text != "<<2" && kbd.InlineKeyboard[0][4].Text != "6" {
+		t.Fail()
+	}
+}
