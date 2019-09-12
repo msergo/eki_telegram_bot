@@ -1,4 +1,4 @@
-package reply_markup_maker
+package main
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 
 func TestMakeReplyMarkupSmart_len5(t *testing.T) {
 	articlesLen := 5
-	kbd := MakeReplyMarkupSmart("abc", articlesLen, 5)
+	kbd := MakeReplyMarkupSmart("abc", articlesLen, 4)
 	if len(kbd.InlineKeyboard[0]) != 5 {
 		t.Fail()
 	}
@@ -32,7 +32,7 @@ func TestMakeReplyMarkupSmart_len7_index6(t *testing.T) {
 		t.Fail()
 	}
 
-	if kbd.InlineKeyboard[0][0].Text != "<<8" && kbd.InlineKeyboard[0][4].Text != "6" {
+	if kbd.InlineKeyboard[0][0].Text != "<<2" && kbd.InlineKeyboard[0][4].Text != "6" {
 		t.Fail()
 	}
 }

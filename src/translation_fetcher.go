@@ -1,4 +1,4 @@
-package translation_fetcher
+package main
 
 import (
 	"fmt"

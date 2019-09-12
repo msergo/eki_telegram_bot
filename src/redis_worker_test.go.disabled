@@ -3,7 +3,7 @@ package redis_worker
 import (
 	"testing"
 )
-
+// TODO: find how to mock redis connection and cover with tests
 func TestRedisWorker_Ping(t *testing.T) {
 	w := InitRedisWorker()
 	defer w.client.Close()
