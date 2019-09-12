@@ -63,7 +63,7 @@ func GetSingleArticle(node *html.Node) (string, bool) {
 			strings.Join(translations, "\r\n"),
 		), false
 	}
-	return fmt.Sprintf("<b>%s</b><i><%s></i>\r\n%s",
+	return fmt.Sprintf("<b>%s</b><i> (%s) </i>\r\n%s",
 			useCase,
 			grammarForms,
 			strings.Join(translations, "\r\n"),
