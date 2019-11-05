@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/go-redis/redis"
 	"encoding/json"
-	"time"
-	"os"
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/go-redis/redis"
 )
 
 type RedisWorker struct {
@@ -37,10 +38,10 @@ func (r RedisWorker) StoreArticles(key string, coll []string) error {
 }
 
 func (r RedisWorker) StoreArticlesSet(key string, articles []string) {
-	for i:= len(articles) - 1; i >=0 ; i -- {
-		r.client.LPush(key, articles[i], ).Err()
+	for i := len(articles) - 1; i >= 0; i-- {
+		r.client.LPush(key, articles[i]).Err()
 	}
-	r.client.Expire(key, time.Minute * 5)
+	r.client.Expire(key, time.Minute*5)
 }
 
 func (r RedisWorker) GetAllArticles(key string) []string {
