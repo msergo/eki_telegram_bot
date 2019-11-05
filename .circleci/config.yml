@@ -8,16 +8,12 @@ jobs:
     steps:
       - setup_remote_docker
       - checkout
-#      - run: docker build -t msergo/eki_telegram_bot .
+      - run: docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} .
       - run:
-          name: Make auth config
+          name: Deploy docker image
           command: |
-            touch ~/.netrc && \
-            curl https://cli-assets.heroku.com/install.sh | sh && \
-            echo machine api.heroku.com >> ~/.netrc && \
-            echo "  login $HEROKU_USER" >> ~/.netrc && \
-            echo "  password $HEROKU_KEY" >> ~/.netrc
-            cat  ~/.netrc
-      - run: /usr/local/bin/heroku container:login
-      - run: /usr/local/bin/heroku container:push web --app $HEROKU_APP
-      - run: /usr/local/bin/heroku container:release web --app $HEROKU_APP
+            if [[ "${CIRCLE_BRANCH}" == "dev" || "${CIRCLE_BRANCH}" == "master" ]]; then
+              docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} . && \
+              docker login -u $DOCKER_USER -p $DOCKER_PASS && \
+              docker push msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH}
+            fi
