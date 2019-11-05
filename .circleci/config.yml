@@ -8,7 +8,7 @@ jobs:
     steps:
       - setup_remote_docker
       - checkout
-      - run: docker build -t msergo/${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} .
+      - run: docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} .
       - run:
           name: Deploy docker image
           command: |
