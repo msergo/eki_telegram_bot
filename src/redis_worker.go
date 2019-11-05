@@ -4,6 +4,7 @@ import (
 	"github.com/go-redis/redis"
 	"encoding/json"
 	"time"
+	"os"
 )
 
 type RedisWorker struct {
@@ -12,7 +13,7 @@ type RedisWorker struct {
 
 func InitRedisWorker() RedisWorker {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "0.0.0.0:6379",
+		Addr:     os.Getenv("REDIS_HOST"),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
