@@ -1,0 +1,13 @@
+version: "3.7"
+services:
+  redis:
+    image: redis:5-alpine
+  eki_ee_bot:
+    image: msergo/sergo_bot:eki_telegram_bot-master
+    ports:
+      - 8083:8083
+    environment:
+      - REDIS_HOST=redis
+      - BOT_TOKEN=
+      - WEBHOOK_ADDRESS=
+      - PORT=8083

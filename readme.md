@@ -2,8 +2,9 @@
 Telegram bot to query words from eki.ee
 
 #### Env vars
-BOT_TOKEN - telegram token
-WEBHOOK_ADDRESS - host address of bot for setting webhook
+* BOT_TOKEN - telegram token
+* WEBHOOK_ADDRESS - host address of bot for setting webhook
+* REDIS_HOST
 
 
 ## ToDo:
