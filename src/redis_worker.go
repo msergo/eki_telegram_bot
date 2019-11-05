@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 	"os"
+	"fmt"
 )
 
 type RedisWorker struct {
@@ -13,7 +14,7 @@ type RedisWorker struct {
 
 func InitRedisWorker() RedisWorker {
 	client := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_HOST"),
+		Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), "6379"),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -22,7 +23,7 @@ func InitRedisWorker() RedisWorker {
 
 func (r RedisWorker) Ping() (response string, error error) {
 	r.client = redis.NewClient(&redis.Options{
-		Addr:     "0.0.0.0:6379",
+		Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), "6379"),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
