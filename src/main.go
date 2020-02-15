@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/getsentry/sentry-go"
-	"time"
 	"errors"
 )
 
