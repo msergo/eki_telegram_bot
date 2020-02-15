@@ -14,7 +14,8 @@ import (
 const (
 	baseURL                = "http://www.eki.ee/dict/evs/index.cgi?Q="
 	cartSelector           = ".tervikart"
-	articleUseCaseSelector = ".leitud_id"
+	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
+	articleUseCaseSelector = ".m.x_m.m"
 	translationSelector    = ".x_x[lang=\"ru\"]"
 	exampleEstSelector     = ".x_n[lang=\"et\"]"
 	exampleRusSelector     = ".x_qn[lang=\"ru\"]"
