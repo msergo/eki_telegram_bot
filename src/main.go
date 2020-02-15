@@ -46,8 +46,6 @@ func main() {
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
 			if update.CallbackQuery == nil || update.CallbackQuery.Message == nil { // hotfix for edited msgs TODO!
-				callbackConfig := tgbotapi.NewCallback(update.CallbackQuery.ID, "no edits allowed")
-				bot.AnswerCallbackQuery(callbackConfig)
 				continue
 			}
 			conf.MessageID = update.CallbackQuery.Message.MessageID
