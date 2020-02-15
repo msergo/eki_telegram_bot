@@ -4,14 +4,34 @@
 [[projects]]
   name = "github.com/PuerkitoBio/goquery"
   packages = ["."]
-  revision = "2d2796f41742ece03e8086188fa4db16a3a0b458"
-  version = "v1.5.0"
+  revision = "1b16b92ddf27ae338f7f162d5e4316b31bccdb8e"
+  version = "v1.5.1"
 
 [[projects]]
   name = "github.com/andybalholm/cascadia"
   packages = ["."]
-  revision = "901648c87902174f774fac311d7f176f8647bdaa"
-  version = "v1.0.0"
+  revision = "b69f6c92dfc187ebfe3914df716c2647a3af0ba0"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/getsentry/sentry-go"
+  packages = ["."]
+  revision = "93b68f59e483f3eede43c3212220a9f6689f8812"
+  version = "v0.5.1"
+
+[[projects]]
+  name = "github.com/go-redis/redis"
+  packages = [
+    ".",
+    "internal",
+    "internal/consistenthash",
+    "internal/hashtag",
+    "internal/pool",
+    "internal/proto",
+    "internal/util"
+  ]
+  revision = "99cd690a7019656b0b67c6664453f27a6d8a658e"
+  version = "v6.15.7"
 
 [[projects]]
   name = "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -28,12 +48,15 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["html","html/atom"]
-  revision = "afa5a82059c6356159f699d81beff22a81842231"
+  packages = [
+    "html",
+    "html/atom"
+  ]
+  revision = "16171245cfb220d5317888b716d69c1fb4e7992b"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0f9eb21d101009645b6ed4061b56d2bd7d7c5bbab0471ff1ea86562ae2820b15"
+  inputs-digest = "937853d2e16e315f69f5c37ece7ce911a4a83aee2f9ed293e35667b0d20e0e91"
   solver-name = "gps-cdcl"
   solver-version = 1

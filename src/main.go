@@ -8,9 +8,15 @@ import (
 	"strings"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/getsentry/sentry-go"
+	"time"
+	"errors"
 )
 
 func main() {
+	sentry.Init(sentry.ClientOptions{
+		Dsn: "https://ab7c99e3853a453992fbaef681564f33@sentry.io/2558985", // TODO: move to envs
+	})
 	redis := InitRedisWorker()
 	_, err := redis.Ping()
 	if err != nil {
@@ -46,6 +52,7 @@ func main() {
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
 			if update.CallbackQuery == nil || update.CallbackQuery.Message == nil { // hotfix for edited msgs TODO!
+				sentry.CaptureException(errors.New("attempt to edit a message"))
 				continue
 			}
 			conf.MessageID = update.CallbackQuery.Message.MessageID
