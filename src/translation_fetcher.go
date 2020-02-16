@@ -22,7 +22,7 @@ const (
 	exampleRusSelector     = ".x_qn[lang=\"ru\"]"
 	grammarFormSelector    = ".mv.x_mv.mv[lang=\"et\"]"
 )
-var cleanupRegex, _ = regexp.Compile("[^a-zA-Z0-9]+")
+var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
 func IsMatchingArticle(searchWord string, givenWord string) bool {
 	a := strings.Split(givenWord, " ")
