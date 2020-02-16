@@ -11,4 +11,7 @@ services:
       - BOT_TOKEN=
       - WEBHOOK_ADDRESS=
       - PORT=8083
+<<<<<<< HEAD
       - SENTRY_DSN=
+=======
+>>>>>>> master
