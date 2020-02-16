@@ -14,7 +14,7 @@ import (
 
 func main() {
 	sentry.Init(sentry.ClientOptions{
-		Dsn:              "https://ab7c99e3853a453992fbaef681564f33@sentry.io/2558985", // TODO: move to envs
+		Dsn:            os.Getenv("SENTRY_DSN"),
 		AttachStacktrace: true,
 	})
 	redis := InitRedisWorker()
