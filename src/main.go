@@ -3,55 +3,58 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/Netflix/go-env"
 )
 
-var env = os.Getenv("ENV") // TODO: check env management tool
+var environment Environment
+func captureErrorIfNotNull(err error) {
+	if err == nil {
+		return
+	}
+	log.Fatal(err)
+	sentry.CaptureException(err)
+}
 func main() {
+	es, err := env.UnmarshalFromEnviron(&environment)
+	captureErrorIfNotNull(err)
+	if err != nil {
+		log.Panic(err)
+	}
+	// Remaining environment variables.
+	environment.Extras = es
+
 	sentry.Init(sentry.ClientOptions{
-		Dsn:              os.Getenv("SENTRY_DSN"),
+		Dsn:              environment.SentryDsn,
 		AttachStacktrace: true,
-		Environment:      env,
-		ServerName:       os.Getenv("WEBHOOK_ADDRESS"),
+		Environment:      environment.Env,
+		ServerName:       environment.WebhookAddress,
 	})
 	redis := InitRedisWorker()
-	_, err := redis.Ping()
-	if err != nil {
-		sentry.CaptureException(err) // TODO: add reconnection strategy
-		//log.Fatalf("Redis connecting error %s", err)
-	}
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
-	if err != nil {
-		sentry.CaptureException(err)
-		//log.Fatal(err)
-	}
+	_, err = redis.Ping()
+	captureErrorIfNotNull(err)
+	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
+	captureErrorIfNotNull(err)
 
 	bot.Debug = false
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
-	if env != "dev" {
-		_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_ADDRESS")))
-		if err != nil {
-			sentry.CaptureException(err)
-			//log.Fatal(err)
-		}
+	if environment.Env != "dev" {
+		_, err = bot.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
+		captureErrorIfNotNull(err)
 		info, err := bot.GetWebhookInfo()
-		if err != nil {
-			sentry.CaptureException(err)
-			//log.Fatal(err)
-		}
+		captureErrorIfNotNull(err)
 		if info.LastErrorDate != 0 {
 			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
 		}
 	}
 
-	updates := bot.ListenForWebhook("/" + os.Getenv("UUID_TOKEN"))
-	go http.ListenAndServe("0.0.0.0:"+os.Getenv("PORT"), nil)
+	updates := bot.ListenForWebhook("/" + environment.UuidToken) // TODO: maybe remove
+	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
 	var buttons []tgbotapi.InlineKeyboardButton
 
@@ -61,23 +64,24 @@ func main() {
 			conf.ParseMode = "html"
 			conf.MessageID = update.CallbackQuery.Message.MessageID
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
-			keysArr := strings.Split(update.CallbackQuery.Data, ",")
+			keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
 			keyword := keysArr[0]
 			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
 			indexInt, _ := strconv.Atoi(keysArr[1])
 			conf.Text = redis.GetArticleByIndex(keyword, index)
 			buttons = buttons[:0]
 			buttonsLen := redis.GetArticlesLen(keyword)
+
 			if buttonsLen > 1 {
 				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, indexInt)
 				conf.ReplyMarkup = &replyMarkup
 			}
 
-			if _, err := bot.Send(conf); err != nil {
-				log.Print(err)
-			}
+			_, err := bot.Send(conf);
+			captureErrorIfNotNull(err)
 			callbackConfig := tgbotapi.NewCallback(update.CallbackQuery.ID, "done")
-			bot.AnswerCallbackQuery(callbackConfig)
+			_, err = bot.AnswerCallbackQuery(callbackConfig)
+			captureErrorIfNotNull(err)
 			continue
 		}
 		var articles []string
@@ -92,9 +96,6 @@ func main() {
 			msg.ReplyMarkup = MakeReplyMarkupSmart(update.Message.Text, len(articles), 0)
 		}
 		msg.ParseMode = "html"
-		if _, err := bot.Send(msg); err != nil {
-			sentry.CaptureException(err)
-			log.Panic(err)
-		}
+		captureErrorIfNotNull(err)
 	}
 }
