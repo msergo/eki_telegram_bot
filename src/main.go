@@ -7,55 +7,58 @@ import (
 	"strconv"
 	"strings"
 
-	"errors"
-
 	"github.com/getsentry/sentry-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+var env = os.Getenv("ENV") // TODO: check env management tool
 func main() {
 	sentry.Init(sentry.ClientOptions{
 		Dsn:              os.Getenv("SENTRY_DSN"),
 		AttachStacktrace: true,
+		Environment:      env,
+		ServerName:       os.Getenv("WEBHOOK_ADDRESS"),
 	})
 	redis := InitRedisWorker()
 	_, err := redis.Ping()
 	if err != nil {
-		log.Fatalf("Redis connecting error %s", err)
+		sentry.CaptureException(err) // TODO: add reconnection strategy
+		//log.Fatalf("Redis connecting error %s", err)
 	}
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
-		log.Fatal(err)
+		sentry.CaptureException(err)
+		//log.Fatal(err)
 	}
 
 	bot.Debug = false
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
+	if env != "dev" {
+		_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_ADDRESS")))
+		if err != nil {
+			sentry.CaptureException(err)
+			//log.Fatal(err)
+		}
+		info, err := bot.GetWebhookInfo()
+		if err != nil {
+			sentry.CaptureException(err)
+			//log.Fatal(err)
+		}
+		if info.LastErrorDate != 0 {
+			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+		}
+	}
 
-	_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_ADDRESS")))
-	if err != nil {
-		log.Fatal(err)
-	}
-	info, err := bot.GetWebhookInfo()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if info.LastErrorDate != 0 {
-		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
-	}
 	updates := bot.ListenForWebhook("/" + os.Getenv("UUID_TOKEN"))
 	go http.ListenAndServe("0.0.0.0:"+os.Getenv("PORT"), nil)
 
 	var buttons []tgbotapi.InlineKeyboardButton
 
 	for update := range updates {
-		if update.Message == nil {
+		if update.Message == nil && update.CallbackQuery != nil {
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
-			if update.CallbackQuery == nil || update.CallbackQuery.Message == nil { // hotfix for edited msgs TODO!
-				sentry.CaptureException(errors.New("attempt to edit a message"))
-				continue
-			}
 			conf.MessageID = update.CallbackQuery.Message.MessageID
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
 			keysArr := strings.Split(update.CallbackQuery.Data, ",")
@@ -90,6 +93,7 @@ func main() {
 		}
 		msg.ParseMode = "html"
 		if _, err := bot.Send(msg); err != nil {
+			sentry.CaptureException(err)
 			log.Panic(err)
 		}
 	}
