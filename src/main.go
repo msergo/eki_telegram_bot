@@ -7,14 +7,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/getsentry/sentry-go"
 	"errors"
+
+	"github.com/getsentry/sentry-go"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func main() {
 	sentry.Init(sentry.ClientOptions{
-		Dsn:            os.Getenv("SENTRY_DSN"),
+		Dsn:              os.Getenv("SENTRY_DSN"),
 		AttachStacktrace: true,
 	})
 	redis := InitRedisWorker()
@@ -79,7 +80,7 @@ func main() {
 		var articles []string
 		articles = redis.GetAllArticles(update.Message.Text)
 		if len(articles) == 0 {
-			articles = GetArticles(update.Message.Text)
+			articles = GetArticles(strings.ToLower(update.Message.Text))
 			redis.StoreArticlesSet(update.Message.Text, articles)
 		}
 		buttons = buttons[:0]
