@@ -3,84 +3,96 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
-	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
-	"errors"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+var environment Environment
+
+func captureErrorIfNotNull(err error) {
+	if err == nil {
+		return
+	}
+	log.Fatal(err)
+	sentry.CaptureException(err)
+}
 func main() {
+	es, err := env.UnmarshalFromEnviron(&environment)
+	captureErrorIfNotNull(err)
+	if err != nil {
+		log.Panic(err)
+	}
+	// Remaining environment variables.
+	environment.Extras = es
+
 	sentry.Init(sentry.ClientOptions{
-		Dsn:            os.Getenv("SENTRY_DSN"),
+		Dsn:              environment.SentryDsn,
 		AttachStacktrace: true,
+		Environment:      environment.Env,
+		ServerName:       environment.WebhookAddress,
 	})
 	redis := InitRedisWorker()
-	_, err := redis.Ping()
-	if err != nil {
-		log.Fatalf("Redis connecting error %s", err)
-	}
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	_, err = redis.Ping()
+	captureErrorIfNotNull(err)
+	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
+	captureErrorIfNotNull(err)
 
 	bot.Debug = false
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
+	if environment.Env != "dev" {
+		_, err = bot.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
+		captureErrorIfNotNull(err)
+		info, err := bot.GetWebhookInfo()
+		captureErrorIfNotNull(err)
+		if info.LastErrorDate != 0 {
+			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+		}
+	}
 
-	_, err = bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("WEBHOOK_ADDRESS")))
-	if err != nil {
-		log.Fatal(err)
-	}
-	info, err := bot.GetWebhookInfo()
-	if err != nil {
-		log.Fatal(err)
-	}
-	if info.LastErrorDate != 0 {
-		log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
-	}
-	updates := bot.ListenForWebhook("/" + os.Getenv("UUID_TOKEN"))
-	go http.ListenAndServe("0.0.0.0:"+os.Getenv("PORT"), nil)
+	updates := bot.ListenForWebhook("/" + environment.UuidToken) // TODO: maybe remove
+	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
 	var buttons []tgbotapi.InlineKeyboardButton
 
 	for update := range updates {
-		if update.Message == nil {
+		if update.Message == nil && update.CallbackQuery != nil {
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
-			if update.CallbackQuery == nil || update.CallbackQuery.Message == nil { // hotfix for edited msgs TODO!
-				sentry.CaptureException(errors.New("attempt to edit a message"))
-				continue
-			}
 			conf.MessageID = update.CallbackQuery.Message.MessageID
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
-			keysArr := strings.Split(update.CallbackQuery.Data, ",")
+			keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
 			keyword := keysArr[0]
 			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
 			indexInt, _ := strconv.Atoi(keysArr[1])
 			conf.Text = redis.GetArticleByIndex(keyword, index)
 			buttons = buttons[:0]
 			buttonsLen := redis.GetArticlesLen(keyword)
+
 			if buttonsLen > 1 {
 				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, indexInt)
 				conf.ReplyMarkup = &replyMarkup
 			}
 
-			if _, err := bot.Send(conf); err != nil {
-				log.Print(err)
-			}
+			_, err := bot.Send(conf)
+			captureErrorIfNotNull(err)
 			callbackConfig := tgbotapi.NewCallback(update.CallbackQuery.ID, "done")
-			bot.AnswerCallbackQuery(callbackConfig)
+			_, err = bot.AnswerCallbackQuery(callbackConfig)
+			captureErrorIfNotNull(err)
 			continue
 		}
 		var articles []string
 		articles = redis.GetAllArticles(update.Message.Text)
 		if len(articles) == 0 {
-			articles = GetArticles(update.Message.Text)
+			articles = GetArticles(strings.ToLower(update.Message.Text))
 			redis.StoreArticlesSet(update.Message.Text, articles)
+		}
+		if len(articles) == 0 {
+			continue
 		}
 		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
@@ -88,8 +100,7 @@ func main() {
 			msg.ReplyMarkup = MakeReplyMarkupSmart(update.Message.Text, len(articles), 0)
 		}
 		msg.ParseMode = "html"
-		if _, err := bot.Send(msg); err != nil {
-			log.Panic(err)
-		}
+		_, err := bot.Send(msg)
+		captureErrorIfNotNull(err)
 	}
 }

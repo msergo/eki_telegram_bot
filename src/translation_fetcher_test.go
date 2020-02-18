@@ -4,8 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/PuerkitoBio/goquery"
 	"os"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 func TestGetSingleArticledWithoutGrammarForms(t *testing.T) {
@@ -41,7 +42,7 @@ func TestGetSingleArticledWithGrammarForms(t *testing.T) {
 	}
 }
 
-func TestFiltering(t *testing.T)  {
+func TestFiltering(t *testing.T) {
 	isMatch := IsMatchingArticle("antud", "'and[ma 'and[a anna[b 'an[tud, 'and[is 'and[ke")
 	isGarbage := IsMatchingArticle("xyz", "'and[ma 'and[a anna[b 'an[tud, 'and[is 'and[ke")
 	if isMatch != true && isGarbage != false {
@@ -49,12 +50,12 @@ func TestFiltering(t *testing.T)  {
 	}
 }
 
-func TestGetArticles(t *testing.T)  {
+func TestGetArticles(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")
 	}
 	articles := GetArticles("sõna")
 	if len(articles) < 1 {
-		t.Errorf("can't fetch articles")
+		t.Errorf("no articles fetched and parsed")
 	}
 }
