@@ -12,6 +12,7 @@ import (
 )
 
 var environment Environment
+
 func captureErrorIfNotNull(err error) {
 	if err == nil {
 		return
@@ -89,6 +90,9 @@ func main() {
 		if len(articles) == 0 {
 			articles = GetArticles(strings.ToLower(update.Message.Text))
 			redis.StoreArticlesSet(update.Message.Text, articles)
+		}
+		if len(articles) == 0 {
+			continue
 		}
 		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
