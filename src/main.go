@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/Netflix/go-env"
+	"github.com/getsentry/sentry-go"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var environment Environment
@@ -78,7 +78,7 @@ func main() {
 				conf.ReplyMarkup = &replyMarkup
 			}
 
-			_, err := bot.Send(conf);
+			_, err := bot.Send(conf)
 			captureErrorIfNotNull(err)
 			callbackConfig := tgbotapi.NewCallback(update.CallbackQuery.ID, "done")
 			_, err = bot.AnswerCallbackQuery(callbackConfig)
@@ -100,6 +100,7 @@ func main() {
 			msg.ReplyMarkup = MakeReplyMarkupSmart(update.Message.Text, len(articles), 0)
 		}
 		msg.ParseMode = "html"
+		_, err := bot.Send(msg)
 		captureErrorIfNotNull(err)
 	}
 }
