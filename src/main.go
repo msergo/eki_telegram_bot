@@ -86,18 +86,19 @@ func main() {
 			continue
 		}
 		var articles []string
-		articles = redis.GetAllArticles(update.Message.Text)
+		searchWord := strings.ToLower(update.Message.Text)
+		articles = redis.GetAllArticles(searchWord)
 		if len(articles) == 0 {
-			articles = GetArticles(strings.ToLower(update.Message.Text))
-			redis.StoreArticlesSet(update.Message.Text, articles)
+			articles = GetArticles(searchWord)
 		}
 		if len(articles) == 0 {
 			continue
 		}
+		redis.StoreArticlesSet(searchWord, articles)
 		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
 		if len(articles) > 1 {
-			msg.ReplyMarkup = MakeReplyMarkupSmart(update.Message.Text, len(articles), 0)
+			msg.ReplyMarkup = MakeReplyMarkupSmart(searchWord, len(articles), 0)
 		}
 		msg.ParseMode = "html"
 		_, err := bot.Send(msg)

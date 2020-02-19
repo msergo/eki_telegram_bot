@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"strings"
@@ -10,11 +9,13 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 	"regexp"
+	"github.com/getsentry/sentry-go"
+	"errors"
 )
 
 const (
-	baseURL                = "http://www.eki.ee/dict/evs/index.cgi?Q="
-	cartSelector           = ".tervikart"
+	baseURL      = "http://www.eki.ee/dict/evs/index.cgi?Q="
+	cartSelector = ".tervikart"
 	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
 	articleUseCaseSelector = ".m.x_m.m"
 	translationSelector    = ".x_x[lang=\"ru\"]"
@@ -22,6 +23,7 @@ const (
 	exampleRusSelector     = ".x_qn[lang=\"ru\"]"
 	grammarFormSelector    = ".mv.x_mv.mv[lang=\"et\"]"
 )
+
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
 func IsMatchingArticle(searchWord string, givenWord string) bool {
@@ -58,32 +60,27 @@ func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 		), false
 	}
 	return fmt.Sprintf("<b>%s</b><i> (%s) </i>\r\n%s",
-			useCase,
-			grammarForms,
-			strings.Join(translations, "\r\n"),
-		),
+		useCase,
+		grammarForms,
+		strings.Join(translations, "\r\n"),
+	),
 		true
 
 }
-
 
 // GetArticles fetches HTML page and extract separate word-related articles
 func GetArticles(searchWord string) []string {
 	// Request the HTML page.
 	res, err := http.Get(fmt.Sprintf("%s%s", baseURL, searchWord))
-	if err != nil {
-		log.Fatal(err)
-	}
+	captureErrorIfNotNull(err)
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		sentry.CaptureException(errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status)))
 	}
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
+	captureErrorIfNotNull(err)
 	var articles []string
 
 	doc.Find(cartSelector).Each(func(i int, page *goquery.Selection) {
