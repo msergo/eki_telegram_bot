@@ -1,10 +1,12 @@
 package main
 
 import (
-	"log"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
@@ -21,6 +23,7 @@ func captureErrorIfNotNull(err error) {
 	sentry.CaptureException(err)
 }
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
 	es, err := env.UnmarshalFromEnviron(&environment)
 	captureErrorIfNotNull(err)
 	if err != nil {
@@ -58,9 +61,15 @@ func main() {
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
 	var buttons []tgbotapi.InlineKeyboardButton
+	var updateInterface map[string]interface{}
 
 	for update := range updates {
+
 		if update.Message == nil && update.CallbackQuery != nil {
+			inrec, _ := json.Marshal(update)
+			json.Unmarshal(inrec, &updateInterface)
+			log.WithFields(updateInterface).Info("new_search")
+
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
 			conf.MessageID = update.CallbackQuery.Message.MessageID
@@ -85,6 +94,10 @@ func main() {
 			captureErrorIfNotNull(err)
 			continue
 		}
+		inrec, _ := json.Marshal(update)
+		json.Unmarshal(inrec, &updateInterface)
+		log.WithFields(updateInterface).Info("article_switch")
+
 		var articles []string
 		searchWord := strings.ToLower(update.Message.Text)
 		articles = redis.GetAllArticles(searchWord)
