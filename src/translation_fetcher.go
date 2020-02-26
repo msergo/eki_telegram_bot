@@ -19,18 +19,19 @@ const (
 
 	cartSelector = ".tervikart"
 	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
-	articleUseCaseSelector = ".m.x_m.m"
-	translationSelector    = ".x_x[lang=\"ru\"]"
-	exampleEstSelector     = ".x_n[lang=\"et\"]"
-	exampleRusSelector     = ".x_qn[lang=\"ru\"]"
-	grammarFormSelector    = ".mv.x_mv.mv[lang=\"et\"]"
+	articleUseCaseSelector    = ".m.x_m.m"
+	articleUseCaseSelectorRus = ".ms.leitud_id"
+	translationSelector       = ".x_x[lang=\"ru\"]"
+	exampleEstSelector        = ".x_n[lang=\"et\"]"
+	exampleRusSelector        = ".x_qn[lang=\"ru\"]"
+	grammarFormSelector       = ".mv.x_mv.mv[lang=\"et\"]"
 )
 
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
 func IsMatchingArticle(searchWord string, givenWord string) bool {
 	a := strings.Split(givenWord, " ")
-	var isMatch bool
+	var isMatch = false
 	for i := range a {
 		form := cleanupRegex.ReplaceAllString(a[i], "")
 		if form == searchWord {
@@ -44,12 +45,18 @@ func IsMatchingArticle(searchWord string, givenWord string) bool {
 // GetSingleArticle get preformatted translation
 func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 	doc := goquery.NewDocumentFromNode(node)
+	var useCase string
 	if isRussian(searchWord) { // TODO: refactor
 		text := doc.Text()
 		text = strings.Replace(text, ";", "\r\n", -1)
+		useCase = doc.Find(articleUseCaseSelectorRus).Text()
+		if !IsMatchingArticle(searchWord, useCase) {
+			return "", false
+		}
+
 		return text, false
 	}
-	useCase := doc.Find(articleUseCaseSelector).Text()
+	useCase = doc.Find(articleUseCaseSelector).Text()
 	grammarForms := doc.Find(grammarFormSelector).Text()
 	//filter garbage
 	if !IsMatchingArticle(searchWord, useCase) && !IsMatchingArticle(searchWord, grammarForms) {
