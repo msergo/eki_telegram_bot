@@ -5,7 +5,9 @@ import (
 	"strconv"
 )
 
-func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.InlineKeyboardMarkup {
+func MakeReplyMarkupSmart(keyword string, buttonsLen int, indexStr string) tgbotapi.InlineKeyboardMarkup {
+	index, _ := strconv.Atoi(indexStr)
+
 	var startPos int
 	var endPos int
 	var buttons []tgbotapi.InlineKeyboardButton

@@ -18,12 +18,9 @@ const (
 	baseURLRus = "http://www.eki.ee/dict/ves/index.cgi?Q="
 
 	cartSelector = ".tervikart"
-	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
 	articleUseCaseSelector    = ".m.x_m.m"
 	articleUseCaseSelectorRus = ".ms.leitud_id"
 	translationSelector       = ".x_x[lang=\"ru\"]"
-	exampleEstSelector        = ".x_n[lang=\"et\"]"
-	exampleRusSelector        = ".x_qn[lang=\"ru\"]"
 	grammarFormSelector       = ".mv.x_mv.mv[lang=\"et\"]"
 )
 
@@ -46,7 +43,7 @@ func IsMatchingArticle(searchWord string, givenWord string) bool {
 func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 	doc := goquery.NewDocumentFromNode(node)
 	var useCase string
-	if isRussian(searchWord) { // TODO: refactor
+	if IsRussian(searchWord) { // TODO: refactor
 		text := doc.Text()
 		text = strings.Replace(text, ";", "\r\n", -1)
 		useCase = doc.Find(articleUseCaseSelectorRus).Text()
@@ -82,11 +79,11 @@ func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 
 }
 
-// GetArticles fetches HTML page and extract separate word-related articles
-func GetArticles(searchWord string) []string {
+// FetchArticles fetches HTML page and extract separate word-related articles
+func FetchArticles(searchWord string) []string {
 	// Request the HTML page.
 	var url string
-	if isRussian(searchWord) {
+	if IsRussian(searchWord) {
 		url = baseURLRus
 	} else {
 		url = baseURL
@@ -118,9 +115,4 @@ func GetArticles(searchWord string) []string {
 	})
 
 	return articles
-}
-
-func isRussian(searchWord string) bool {
-	var rxCyrillic = regexp.MustCompile("^[\u0400-\u04FF\u0500-\u052F]+$")
-	return rxCyrillic.MatchString(searchWord)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	"strconv"
 )
 
 type RedisWorker struct {
@@ -47,11 +48,12 @@ func (r RedisWorker) GetAllArticles(key string) []string {
 	return r.client.LRange(key, 0, -1).Val()
 }
 
-func (r RedisWorker) GetArticleByIndex(key string, index int64) string {
+func (r RedisWorker) GetArticleByIndex(key string, indexStr string) string {
+	index, _ := strconv.ParseInt(indexStr, 10, 64)
 	return r.client.LIndex(key, index).Val()
 }
 
-func (r RedisWorker) GetArticlesLen(key string) int {
+func (r RedisWorker) GetArticlesLenByKeyword(key string) int {
 	len64 := r.client.LLen(key).Val()
 	return int(len64)
 }

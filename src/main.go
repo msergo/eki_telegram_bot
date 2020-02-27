@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,7 +9,7 @@ import (
 
 	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var environment Environment
@@ -60,60 +59,44 @@ func main() {
 	updates := bot.ListenForWebhook("/" + environment.UuidToken) // TODO: maybe remove
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
-	var buttons []tgbotapi.InlineKeyboardButton
-	var updateInterface map[string]interface{}
-
 	for update := range updates {
-
-		if update.Message == nil && update.CallbackQuery != nil {
-			inrec, _ := json.Marshal(update)
-			json.Unmarshal(inrec, &updateInterface)
-			log.WithFields(updateInterface).Info("new_search")
-
-			conf := &tgbotapi.EditMessageTextConfig{}
-			conf.ParseMode = "html"
-			conf.MessageID = update.CallbackQuery.Message.MessageID
-			conf.ChatID = update.CallbackQuery.Message.Chat.ID
+		var dataToSend *tgbotapi.EditMessageTextConfig
+		if IsCallbackQuery(update) {
+			LogObject(update, "article_swtich")
 			keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
-			keyword := keysArr[0]
-			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
-			indexInt, _ := strconv.Atoi(keysArr[1])
-			conf.Text = redis.GetArticleByIndex(keyword, index)
-			buttons = buttons[:0]
-			buttonsLen := redis.GetArticlesLen(keyword)
+			keyword := strings.ToLower(keysArr[0])
+			buttonsLen := redis.GetArticlesLenByKeyword(keyword)
+			dataToSend = &tgbotapi.EditMessageTextConfig{}
 
 			if buttonsLen > 1 {
-				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, indexInt)
-				conf.ReplyMarkup = &replyMarkup
+				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, keysArr[1])
+				dataToSend.ReplyMarkup = &replyMarkup
 			}
+			dataToSend.ParseMode = "html"
+			dataToSend.MessageID = update.CallbackQuery.Message.MessageID
+			dataToSend.ChatID = update.CallbackQuery.Message.Chat.ID
+			dataToSend.Text = redis.GetArticleByIndex(keyword, keysArr[1])
 
-			_, err := bot.Send(conf)
-			captureErrorIfNotNull(err)
-			callbackConfig := tgbotapi.NewCallback(update.CallbackQuery.ID, "done")
-			_, err = bot.AnswerCallbackQuery(callbackConfig)
+			_, err := bot.Send(dataToSend)
 			captureErrorIfNotNull(err)
 			continue
 		}
-		inrec, _ := json.Marshal(update)
-		json.Unmarshal(inrec, &updateInterface)
-		log.WithFields(updateInterface).Info("article_switch")
-
+		LogObject(update, "new_search")
 		var articles []string
 		searchWord := strings.ToLower(update.Message.Text)
 		articles = redis.GetAllArticles(searchWord)
 		if len(articles) == 0 {
-			articles = GetArticles(searchWord)
+			articles = FetchArticles(searchWord)
 		}
 		if len(articles) == 0 {
 			continue
 		}
 		redis.StoreArticlesSet(searchWord, articles)
-		buttons = buttons[:0]
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
-		if len(articles) > 1 {
-			msg.ReplyMarkup = MakeReplyMarkupSmart(searchWord, len(articles), 0)
-		}
 		msg.ParseMode = "html"
+		if len(articles) > 1 {
+			msg.ReplyMarkup = MakeReplyMarkupSmart(searchWord, len(articles), "0")
+		}
 		_, err := bot.Send(msg)
 		captureErrorIfNotNull(err)
 	}
