@@ -6,29 +6,32 @@ import (
 
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
-	"golang.org/x/net/html"
 	"regexp"
+
+	"github.com/PuerkitoBio/goquery"
 	"github.com/getsentry/sentry-go"
-	"errors"
+	"golang.org/x/net/html"
 )
 
 const (
-	baseURL      = "http://www.eki.ee/dict/evs/index.cgi?Q="
+	baseURL    = "http://www.eki.ee/dict/evs/index.cgi?Q="
+	baseURLRus = "http://www.eki.ee/dict/ves/index.cgi?Q="
+
 	cartSelector = ".tervikart"
 	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
-	articleUseCaseSelector = ".m.x_m.m"
-	translationSelector    = ".x_x[lang=\"ru\"]"
-	exampleEstSelector     = ".x_n[lang=\"et\"]"
-	exampleRusSelector     = ".x_qn[lang=\"ru\"]"
-	grammarFormSelector    = ".mv.x_mv.mv[lang=\"et\"]"
+	articleUseCaseSelector    = ".m.x_m.m"
+	articleUseCaseSelectorRus = ".ms.leitud_id"
+	translationSelector       = ".x_x[lang=\"ru\"]"
+	exampleEstSelector        = ".x_n[lang=\"et\"]"
+	exampleRusSelector        = ".x_qn[lang=\"ru\"]"
+	grammarFormSelector       = ".mv.x_mv.mv[lang=\"et\"]"
 )
 
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
 func IsMatchingArticle(searchWord string, givenWord string) bool {
 	a := strings.Split(givenWord, " ")
-	var isMatch bool
+	var isMatch = false
 	for i := range a {
 		form := cleanupRegex.ReplaceAllString(a[i], "")
 		if form == searchWord {
@@ -42,7 +45,18 @@ func IsMatchingArticle(searchWord string, givenWord string) bool {
 // GetSingleArticle get preformatted translation
 func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 	doc := goquery.NewDocumentFromNode(node)
-	useCase := doc.Find(articleUseCaseSelector).Text()
+	var useCase string
+	if isRussian(searchWord) { // TODO: refactor
+		text := doc.Text()
+		text = strings.Replace(text, ";", "\r\n", -1)
+		useCase = doc.Find(articleUseCaseSelectorRus).Text()
+		if !IsMatchingArticle(searchWord, useCase) {
+			return "", false
+		}
+
+		return text, false
+	}
+	useCase = doc.Find(articleUseCaseSelector).Text()
 	grammarForms := doc.Find(grammarFormSelector).Text()
 	//filter garbage
 	if !IsMatchingArticle(searchWord, useCase) && !IsMatchingArticle(searchWord, grammarForms) {
@@ -60,10 +74,10 @@ func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 		), false
 	}
 	return fmt.Sprintf("<b>%s</b><i> (%s) </i>\r\n%s",
-		useCase,
-		grammarForms,
-		strings.Join(translations, "\r\n"),
-	),
+			useCase,
+			grammarForms,
+			strings.Join(translations, "\r\n"),
+		),
 		true
 
 }
@@ -71,11 +85,17 @@ func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 // GetArticles fetches HTML page and extract separate word-related articles
 func GetArticles(searchWord string) []string {
 	// Request the HTML page.
-	res, err := http.Get(fmt.Sprintf("%s%s", baseURL, searchWord))
+	var url string
+	if isRussian(searchWord) {
+		url = baseURLRus
+	} else {
+		url = baseURL
+	}
+	res, err := http.Get(fmt.Sprintf("%s%s", url, searchWord))
 	captureErrorIfNotNull(err)
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		sentry.CaptureException(errors.New(fmt.Sprintf("status code error: %d %s", res.StatusCode, res.Status)))
+		sentry.CaptureException(fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status))
 	}
 
 	// Load the HTML document
@@ -98,4 +118,9 @@ func GetArticles(searchWord string) []string {
 	})
 
 	return articles
+}
+
+func isRussian(searchWord string) bool {
+	var rxCyrillic = regexp.MustCompile("^[\u0400-\u04FF\u0500-\u052F]+$")
+	return rxCyrillic.MatchString(searchWord)
 }
