@@ -8,6 +8,8 @@ import (
 	"github.com/go-redis/redis"
 )
 
+const pubSubChan = "searches"
+
 type RedisWorker struct {
 	client *redis.Client
 }
@@ -54,4 +56,8 @@ func (r RedisWorker) GetArticleByIndex(key string, index int64) string {
 func (r RedisWorker) GetArticlesLen(key string) int {
 	len64 := r.client.LLen(key).Val()
 	return int(len64)
+}
+
+func (r RedisWorker) pushToChannel(value string) error {
+	return r.client.Publish(pubSubChan, value).Err()
 }
