@@ -10,7 +10,7 @@ import (
 
 	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var environment Environment
@@ -60,7 +60,6 @@ func main() {
 	updates := bot.ListenForWebhook("/" + environment.UuidToken) // TODO: maybe remove
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
-	var buttons []tgbotapi.InlineKeyboardButton
 	var updateInterface map[string]interface{}
 
 	for update := range updates {
@@ -79,7 +78,6 @@ func main() {
 			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
 			indexInt, _ := strconv.Atoi(keysArr[1])
 			conf.Text = redis.GetArticleByIndex(keyword, index)
-			buttons = buttons[:0]
 			buttonsLen := redis.GetArticlesLen(keyword)
 
 			if buttonsLen > 1 {
@@ -108,7 +106,8 @@ func main() {
 			continue
 		}
 		redis.StoreArticlesSet(searchWord, articles)
-		buttons = buttons[:0]
+		err = redis.pushToChannel(searchWord)
+		captureErrorIfNotNull(err)
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
 		if len(articles) > 1 {
 			msg.ReplyMarkup = MakeReplyMarkupSmart(searchWord, len(articles), 0)
