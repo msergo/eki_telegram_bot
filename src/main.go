@@ -9,78 +9,66 @@ import (
 	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+	"errors"
+	"fmt"
 )
 
 var environment Environment
 
-func captureErrorIfNotNull(err error) {
-	if err == nil {
-		return
-	}
-	log.Fatal(err)
-	sentry.CaptureException(err)
-}
 func main() {
-	log.SetFormatter(&log.JSONFormatter{})
-	es, err := env.UnmarshalFromEnviron(&environment)
-	captureErrorIfNotNull(err)
-	if err != nil {
-		log.Panic(err)
-	}
-	// Remaining environment variables.
-	environment.Extras = es
-
-	sentry.Init(sentry.ClientOptions{
+	sentryInitError := sentry.Init(sentry.ClientOptions{
 		Dsn:              environment.SentryDsn,
 		AttachStacktrace: true,
 		Environment:      environment.Env,
 		ServerName:       environment.WebhookAddress,
 	})
+	capturePanicErrorIfNotNull(sentryInitError)
+	log.SetFormatter(&log.JSONFormatter{})
+	es, err := env.UnmarshalFromEnviron(&environment)
+	capturePanicErrorIfNotNull(err)
+	environment.Extras = es
+
 	redis := InitRedisWorker()
-	_, err = redis.Ping()
-	captureErrorIfNotNull(err)
+	_, err = redis.Ping() //TODO: think about Redis failure
+	captureFatalErrorIfNotNull(err)
 	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
-	captureErrorIfNotNull(err)
+	captureFatalErrorIfNotNull(err)
 
 	bot.Debug = false
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	if environment.Env != "dev" {
 		_, err = bot.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
-		captureErrorIfNotNull(err)
+		capturePanicErrorIfNotNull(err)
 		info, err := bot.GetWebhookInfo()
-		captureErrorIfNotNull(err)
+		capturePanicErrorIfNotNull(err)
 		if info.LastErrorDate != 0 {
-			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+			capturePanicErrorIfNotNull(errors.New(fmt.Sprintf("Telegram callback failed: %s", info.LastErrorMessage)))
 		}
 	}
 
 	updates := bot.ListenForWebhook("/" + environment.UuidToken) // TODO: maybe remove
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
-
 	for update := range updates {
-		var dataToSend *tgbotapi.EditMessageTextConfig
+		LogObject(update)
+		if update.Message.IsCommand() {
+			continue
+		}
 		if IsCallbackQuery(update) {
-			LogObject(update, "article_swtich")
 			keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
 			keyword := strings.ToLower(keysArr[0])
 			buttonsLen := redis.GetArticlesLenByKeyword(keyword)
-			dataToSend = &tgbotapi.EditMessageTextConfig{}
 
+			newText := redis.GetArticleByIndex(keyword, keysArr[1])
+			dataToSend := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, newText)
 			if buttonsLen > 1 {
-				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, keysArr[1])
+				replyMarkup := MakeReplyMarkup(keyword, buttonsLen, keysArr[1])
 				dataToSend.ReplyMarkup = &replyMarkup
 			}
-			dataToSend.ParseMode = "html"
-			dataToSend.MessageID = update.CallbackQuery.Message.MessageID
-			dataToSend.ChatID = update.CallbackQuery.Message.Chat.ID
-			dataToSend.Text = redis.GetArticleByIndex(keyword, keysArr[1])
-
 			_, err := bot.Send(dataToSend)
-			captureErrorIfNotNull(err)
+			captureFatalErrorIfNotNull(err)
 			continue
 		}
-		LogObject(update, "new_search")
 		var articles []string
 		searchWord := strings.ToLower(update.Message.Text)
 		articles = redis.GetAllArticles(searchWord)
@@ -94,9 +82,9 @@ func main() {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
 		msg.ParseMode = "html"
 		if len(articles) > 1 {
-			msg.ReplyMarkup = MakeReplyMarkupSmart(searchWord, len(articles), "0")
+			msg.ReplyMarkup = MakeReplyMarkup(searchWord, len(articles), "0")
 		}
 		_, err := bot.Send(msg)
-		captureErrorIfNotNull(err)
+		captureFatalErrorIfNotNull(err)
 	}
 }

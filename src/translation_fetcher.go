@@ -89,7 +89,7 @@ func FetchArticles(searchWord string) []string {
 		url = baseURL
 	}
 	res, err := http.Get(fmt.Sprintf("%s%s", url, searchWord))
-	captureErrorIfNotNull(err)
+	captureFatalErrorIfNotNull(err)
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
 		sentry.CaptureException(fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status))
@@ -97,7 +97,7 @@ func FetchArticles(searchWord string) []string {
 
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-	captureErrorIfNotNull(err)
+	captureFatalErrorIfNotNull(err)
 	var articles []string
 
 	doc.Find(cartSelector).Each(func(i int, page *goquery.Selection) {
