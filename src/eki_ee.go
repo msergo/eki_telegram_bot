@@ -26,15 +26,16 @@ func (e *EkiEe) MakeNewSearchResponse(update tgbotapi.Update) tgbotapi.Chattable
 	var articles []string
 	searchWord := strings.ToLower(update.Message.Text)
 	articles = e.redisWorker.GetAllArticles(searchWord)
-	if len(articles) == 0 {
+	articlesLen := len(articles)
+	if articlesLen == 0 {
 		articles = FetchArticles(searchWord)
 	}
-	if len(articles) == 0 {
+	if articlesLen == 0 {
 		return nil
 	}
 	e.redisWorker.StoreArticlesSet(searchWord, articles)
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
-	msg.ParseMode = "html"
+	msg.ParseMode = tgbotapi.ModeHTML
 	if len(articles) > 1 {
 		msg.ReplyMarkup = MakeReplyMarkup(searchWord, len(articles), "0")
 	}
@@ -48,6 +49,8 @@ func (e *EkiEe) MakeArticleSwitchResponse(update tgbotapi.Update) tgbotapi.Chatt
 
 	newText := e.redisWorker.GetArticleByIndex(keyword, keysArr[1])
 	dataToSend := tgbotapi.NewEditMessageText(update.CallbackQuery.Message.Chat.ID, update.CallbackQuery.Message.MessageID, newText)
+	dataToSend.ParseMode = tgbotapi.ModeHTML
+
 	if buttonsLen > 1 {
 		replyMarkup := MakeReplyMarkup(keyword, buttonsLen, keysArr[1])
 		dataToSend.ReplyMarkup = &replyMarkup

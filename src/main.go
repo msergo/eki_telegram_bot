@@ -11,7 +11,7 @@ import (
 
 	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 var environment Environment
