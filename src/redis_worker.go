@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/go-redis/redis"
 )
+
+const pubSubChan = "searches"
 
 type RedisWorker struct {
 	client *redis.Client
@@ -15,7 +16,7 @@ type RedisWorker struct {
 
 func InitRedisWorker() RedisWorker {
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), "6379"),
+		Addr:     fmt.Sprintf("%s:%s", environment.RedisHost, "6379"),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -24,7 +25,7 @@ func InitRedisWorker() RedisWorker {
 
 func (r RedisWorker) Ping() (response string, error error) {
 	r.client = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), "6379"),
+		Addr:     fmt.Sprintf("%s:%s", environment.RedisHost, "6379"),
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
@@ -41,7 +42,7 @@ func (r RedisWorker) StoreArticlesSet(key string, articles []string) {
 	for i := len(articles) - 1; i >= 0; i-- {
 		r.client.LPush(key, articles[i]).Err()
 	}
-	r.client.Expire(key, time.Minute*5)
+	r.client.Expire(key, time.Hour*48)
 }
 
 func (r RedisWorker) GetAllArticles(key string) []string {
@@ -55,4 +56,8 @@ func (r RedisWorker) GetArticleByIndex(key string, index int64) string {
 func (r RedisWorker) GetArticlesLen(key string) int {
 	len64 := r.client.LLen(key).Val()
 	return int(len64)
+}
+
+func (r RedisWorker) pushToChannel(value string) error {
+	return r.client.Publish(pubSubChan, value).Err()
 }
