@@ -20,7 +20,7 @@ func MakeReplyMarkup(keyword string, buttonsLen int, indexStr string) tgbotapi.I
 	if buttonsLen <= 5 {
 		startPos = 0
 		endPos = buttonsLen
-	} else if index-3 >= 0 && index + 1 < buttonsLen {
+	} else if index-3 >= 0 && index+1 < buttonsLen {
 		startPos = index - 3
 		endPos = index + 2
 	} else if index-2 <= 0 {

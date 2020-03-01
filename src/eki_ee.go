@@ -1,27 +1,43 @@
 package main
 
 import (
-	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"strings"
+
+	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
+// EkiEe desc here
 type EkiEe struct {
 	redisWorker RedisWorker
 	telegram    *tgbotapi.BotAPI
 }
 
-func (e *EkiEe) Init() {
+// func (e *EkiEe) Init() {
+// 	var err error
+// 	redisWorker := InitRedisWorker()
+// 	_, err = redisWorker.Ping() //TODO: think about Redis failure
+// 	captureFatalErrorIfNotNull(err)
+// 	e.redisWorker = redisWorker
+// 	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
+// 	captureFatalErrorIfNotNull(err)
+// 	e.telegram = bot
+// 	// e.telegram.Debug = false
+// }
+
+// InitEki desc here
+func InitEki() EkiEe {
 	var err error
 	redisWorker := InitRedisWorker()
 	_, err = redisWorker.Ping() //TODO: think about Redis failure
 	captureFatalErrorIfNotNull(err)
-	e.redisWorker = redisWorker
 	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
 	captureFatalErrorIfNotNull(err)
-	e.telegram = bot
-	e.telegram.Debug = false
+	bot.Debug = false
+
+	return EkiEe{redisWorker: redisWorker, telegram: bot}
 }
 
+// MakeNewSearchResponse desc here TODO:
 func (e *EkiEe) MakeNewSearchResponse(update tgbotapi.Update) tgbotapi.Chattable {
 	var articles []string
 	searchWord := strings.ToLower(update.Message.Text)
@@ -30,6 +46,7 @@ func (e *EkiEe) MakeNewSearchResponse(update tgbotapi.Update) tgbotapi.Chattable
 	if articlesLen == 0 {
 		articles = FetchArticles(searchWord)
 	}
+	articlesLen = len(articles)
 	if articlesLen == 0 {
 		return nil
 	}
@@ -42,6 +59,7 @@ func (e *EkiEe) MakeNewSearchResponse(update tgbotapi.Update) tgbotapi.Chattable
 	return msg
 }
 
+// MakeArticleSwitchResponse desc here TODO:
 func (e *EkiEe) MakeArticleSwitchResponse(update tgbotapi.Update) tgbotapi.Chattable {
 	keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
 	keyword := strings.ToLower(keysArr[0])

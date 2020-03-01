@@ -1,13 +1,13 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
 
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"time"
 
 	"github.com/Netflix/go-env"
 	"github.com/getsentry/sentry-go"
@@ -17,6 +17,7 @@ import (
 var environment Environment
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
 	sentryInitError := sentry.Init(sentry.ClientOptions{
 		Dsn:              environment.SentryDsn,
 		AttachStacktrace: true,
@@ -24,36 +25,33 @@ func main() {
 		ServerName:       environment.WebhookAddress,
 	})
 	capturePanicErrorIfNotNull(sentryInitError)
-	log.SetFormatter(&log.JSONFormatter{})
 	es, err := env.UnmarshalFromEnviron(&environment)
 	capturePanicErrorIfNotNull(err)
 	environment.Extras = es
-
-	ekiEe := EkiEe{}
-	ekiEe.Init()
+	defer sentry.Flush(3 * time.Second)
+	ekiEe := InitEki()
 
 	log.Printf("Authorized on account %s", ekiEe.telegram.Self.UserName)
 	if environment.Env != "dev" {
 		_, err = ekiEe.telegram.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
 		capturePanicErrorIfNotNull(err)
-		info, err := ekiEe.telegram.GetWebhookInfo()
-		capturePanicErrorIfNotNull(err)
-		if info.LastErrorDate != 0 {
-			capturePanicErrorIfNotNull(fmt.Errorf("Telegram callback failed: %s", info.LastErrorMessage))
-		}
 	}
 
 	http.HandleFunc("/"+environment.UuidToken, func(w http.ResponseWriter, r *http.Request) {
 		var update tgbotapi.Update
+		var plain map[string]interface{}
 		var response tgbotapi.Chattable
 
 		bytes, _ := ioutil.ReadAll(r.Body)
-		LogObject(update)
+
+		json.Unmarshal(bytes, &plain)
 		json.Unmarshal(bytes, &update)
 
 		if !IsCallbackQuery(update) {
+			log.WithFields(plain).Info("new_searh")
 			response = ekiEe.MakeNewSearchResponse(update)
 		} else {
+			log.WithFields(plain).Info("callback_query")
 			response = ekiEe.MakeArticleSwitchResponse(update)
 		}
 
@@ -61,7 +59,6 @@ func main() {
 			_, err = ekiEe.telegram.Send(response)
 			captureFatalErrorIfNotNull(err)
 		}
-
 	})
 
 	http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)

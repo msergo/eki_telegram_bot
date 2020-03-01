@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"regexp"
+	"github.com/getsentry/sentry-go"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	log "github.com/sirupsen/logrus"
-	"github.com/getsentry/sentry-go"
+	"regexp"
 )
 
 func IsCallbackQuery(update tgbotapi.Update) bool {
@@ -19,7 +19,7 @@ func LogObject(update interface{}) {
 	var updateInterface map[string]interface{}
 	inrec, _ := json.Marshal(update)
 	json.Unmarshal(inrec, &updateInterface)
-	log.WithFields(updateInterface)
+	log.WithFields(updateInterface).Info("")
 }
 
 func captureFatalErrorIfNotNull(err error) {

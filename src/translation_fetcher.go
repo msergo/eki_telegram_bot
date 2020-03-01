@@ -17,7 +17,7 @@ const (
 	baseURL    = "http://www.eki.ee/dict/evs/index.cgi?Q="
 	baseURLRus = "http://www.eki.ee/dict/ves/index.cgi?Q="
 
-	cartSelector = ".tervikart"
+	cartSelector              = ".tervikart"
 	articleUseCaseSelector    = ".m.x_m.m"
 	articleUseCaseSelectorRus = ".ms.leitud_id"
 	translationSelector       = ".x_x[lang=\"ru\"]"
@@ -26,6 +26,7 @@ const (
 
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
+// IsMatchingArticle TODO: add desc
 func IsMatchingArticle(searchWord string, givenWord string) bool {
 	a := strings.Split(givenWord, " ")
 	var isMatch = false
