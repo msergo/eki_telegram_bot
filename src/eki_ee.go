@@ -6,25 +6,13 @@ import (
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-// EkiEe desc here
+// EkiEe interface for most bot functional
 type EkiEe struct {
 	redisWorker RedisWorker
 	telegram    *tgbotapi.BotAPI
 }
 
-// func (e *EkiEe) Init() {
-// 	var err error
-// 	redisWorker := InitRedisWorker()
-// 	_, err = redisWorker.Ping() //TODO: think about Redis failure
-// 	captureFatalErrorIfNotNull(err)
-// 	e.redisWorker = redisWorker
-// 	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
-// 	captureFatalErrorIfNotNull(err)
-// 	e.telegram = bot
-// 	// e.telegram.Debug = false
-// }
-
-// InitEki desc here
+// InitEki a constructor
 func InitEki() EkiEe {
 	var err error
 	redisWorker := InitRedisWorker()
@@ -37,7 +25,7 @@ func InitEki() EkiEe {
 	return EkiEe{redisWorker: redisWorker, telegram: bot}
 }
 
-// MakeNewSearchResponse desc here TODO:
+// MakeNewSearchResponse prepare response for new search
 func (e *EkiEe) MakeNewSearchResponse(update tgbotapi.Update) tgbotapi.Chattable {
 	var articles []string
 	searchWord := strings.ToLower(update.Message.Text)
@@ -59,9 +47,9 @@ func (e *EkiEe) MakeNewSearchResponse(update tgbotapi.Update) tgbotapi.Chattable
 	return msg
 }
 
-// MakeArticleSwitchResponse desc here TODO:
+// MakeArticleSwitchResponse prepare a response for switching articles
 func (e *EkiEe) MakeArticleSwitchResponse(update tgbotapi.Update) tgbotapi.Chattable {
-	keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
+	keysArr := strings.Split(update.CallbackQuery.Data, ",")
 	keyword := strings.ToLower(keysArr[0])
 	buttonsLen := e.redisWorker.GetArticlesLenByKeyword(keyword)
 

@@ -26,7 +26,7 @@ const (
 
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
-// IsMatchingArticle TODO: add desc
+// IsMatchingArticle check if the article header contains search word
 func IsMatchingArticle(searchWord string, givenWord string) bool {
 	a := strings.Split(givenWord, " ")
 	var isMatch = false
@@ -44,7 +44,7 @@ func IsMatchingArticle(searchWord string, givenWord string) bool {
 func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 	doc := goquery.NewDocumentFromNode(node)
 	var useCase string
-	if IsRussian(searchWord) { // TODO: refactor
+	if IsRussian(searchWord) {
 		text := doc.Text()
 		text = strings.Replace(text, ";", "\r\n", -1)
 		useCase = doc.Find(articleUseCaseSelectorRus).Text()
