@@ -19,7 +19,11 @@ func captureErrorIfNotNull(err error) {
 	if err == nil {
 		return
 	}
-	log.Fatal(err)
+	log.WithFields(log.Fields{
+		"event_type":          "app_event",
+		"telegram_message":    nil,
+		"article_search_type": "nil",
+	}).Error(err.Error())
 	sentry.CaptureException(err)
 }
 func main() {
@@ -46,14 +50,22 @@ func main() {
 
 	bot.Debug = false
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.WithFields(log.Fields{
+		"event_type":          "app_event",
+		"telegram_message":    nil,
+		"article_search_type": "nil",
+	}).Info("Authorized on account %s", bot.Self.UserName)
 	if environment.Env != "dev" {
 		_, err = bot.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
 		captureErrorIfNotNull(err)
 		info, err := bot.GetWebhookInfo()
 		captureErrorIfNotNull(err)
 		if info.LastErrorDate != 0 {
-			log.Printf("Telegram callback failed: %s", info.LastErrorMessage)
+			log.WithFields(log.Fields{
+				"event_type":          "app_event",
+				"telegram_message":    nil,
+				"article_search_type": "nil",
+			}).Error("Telegram callback failed: %s", info.LastErrorMessage)
 		}
 	}
 
@@ -67,8 +79,11 @@ func main() {
 		if update.Message == nil && update.CallbackQuery != nil {
 			inrec, _ := json.Marshal(update)
 			json.Unmarshal(inrec, &updateInterface)
-			log.WithFields(updateInterface).Info("new_search")
-
+			log.WithFields(log.Fields{
+				"event_type":          "incoming_message",
+				"telegram_message":    updateInterface,
+				"article_search_type": "article_switch",
+			}).Info()
 			conf := &tgbotapi.EditMessageTextConfig{}
 			conf.ParseMode = "html"
 			conf.MessageID = update.CallbackQuery.Message.MessageID
@@ -94,7 +109,11 @@ func main() {
 		}
 		inrec, _ := json.Marshal(update)
 		json.Unmarshal(inrec, &updateInterface)
-		log.WithFields(updateInterface).Info("article_switch")
+		log.WithFields(log.Fields{
+			"event_type":          "incoming_message",
+			"telegram_message":    updateInterface,
+			"article_search_type": "new_search",
+		}).Info()
 
 		var articles []string
 		searchWord := strings.ToLower(update.Message.Text)
