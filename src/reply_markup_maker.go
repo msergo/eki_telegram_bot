@@ -5,12 +5,17 @@ import (
 	"strconv"
 )
 
-func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.InlineKeyboardMarkup {
+func MakeReplyMarkup(keyword string, buttonsLen int, index int) tgbotapi.InlineKeyboardMarkup {
 	var startPos int
 	var endPos int
 	var buttons []tgbotapi.InlineKeyboardButton
 	for i := 0; i < buttonsLen; i++ {
-		callbackData := keyword + "," + strconv.Itoa(i) //probleem,1
+		var callbackData string
+		if i == index {
+			callbackData = "none" // assign empty cb data to prevent resending same reply which causes err
+		} else {
+			callbackData = keyword + "," + strconv.Itoa(i) //probleem,1
+		}
 		but := tgbotapi.NewInlineKeyboardButtonData(strconv.Itoa(i), callbackData)
 		buttons = append(buttons, but)
 	}
@@ -18,7 +23,7 @@ func MakeReplyMarkupSmart(keyword string, buttonsLen int, index int) tgbotapi.In
 	if buttonsLen <= 5 {
 		startPos = 0
 		endPos = buttonsLen
-	} else if index-3 >= 0 && index + 1 < buttonsLen {
+	} else if index-3 >= 0 && index+1 < buttonsLen {
 		startPos = index - 3
 		endPos = index + 2
 	} else if index-2 <= 0 {
