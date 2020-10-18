@@ -12,7 +12,7 @@ func MakeReplyMarkup(keyword string, buttonsLen int, index int) tgbotapi.InlineK
 	for i := 0; i < buttonsLen; i++ {
 		var callbackData string
 		if i == index {
-			callbackData = "" // assign empty cb data to prevent resending same reply which causes err
+			callbackData = "none" // assign empty cb data to prevent resending same reply which causes err
 		} else {
 			callbackData = keyword + "," + strconv.Itoa(i) //probleem,1
 		}

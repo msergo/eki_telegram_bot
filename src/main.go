@@ -91,11 +91,11 @@ func main() {
 			// fixing error
 			//Bad Request: message is not modified: specified new message content and reply markup are exactly
 			//the same as a current content and reply markup of the message
-			if update.CallbackQuery.Data == "" {
+			if update.CallbackQuery.Data == "none" {
 				_, err = bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "done"))
 				continue
 			}
-			keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
+			keysArr := strings.Split(update.CallbackQuery.Data, ",") // probleem,1
 			keyword := keysArr[0]
 			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
 			indexInt, _ := strconv.Atoi(keysArr[1])

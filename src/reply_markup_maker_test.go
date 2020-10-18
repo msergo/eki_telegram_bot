@@ -78,7 +78,7 @@ func TestMakeReplyMarkup_current_elem_empty_cb(t *testing.T) {
 	articlesLen := 5
 	selectedElemIndex := 2
 	kbd := MakeReplyMarkup("abc", articlesLen, selectedElemIndex)
-	if *kbd.InlineKeyboard[0][selectedElemIndex].CallbackData != "" {
+	if *kbd.InlineKeyboard[0][selectedElemIndex].CallbackData != "none" {
 		t.Fail()
 	}
 }
