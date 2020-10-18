@@ -50,11 +50,11 @@ func main() {
 
 	bot.Debug = false
 
-	log.WithFields(log.Fields{
-		"event_type":          "app_event",
-		"telegram_message":    nil,
-		"article_search_type": "nil",
-	}).Info("Authorized on account %s", bot.Self.UserName)
+	//log.WithFields(log.Fields{
+	//	"event_type":          "app_event",
+	//	"telegram_message":    nil,
+	//	"article_search_type": "nil",
+	//}).Info("Authorized on account %s", bot.Self.UserName)
 	if environment.Env != "dev" {
 		_, err = bot.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
 		captureErrorIfNotNull(err)
@@ -69,7 +69,7 @@ func main() {
 		}
 	}
 
-	updates := bot.ListenForWebhook("/" + environment.UuidToken) // TODO: maybe remove
+	updates := bot.ListenForWebhook("/" + environment.UuidToken)
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
 	var updateInterface map[string]interface{}
@@ -88,6 +88,13 @@ func main() {
 			conf.ParseMode = "html"
 			conf.MessageID = update.CallbackQuery.Message.MessageID
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
+			// fixing error
+			//Bad Request: message is not modified: specified new message content and reply markup are exactly
+			//the same as a current content and reply markup of the message
+			if update.CallbackQuery.Data == "" {
+				_, err = bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "done"))
+				continue
+			}
 			keysArr := strings.Split(update.CallbackQuery.Data, ",") // TODO: refactor here
 			keyword := keysArr[0]
 			index, _ := strconv.ParseInt(keysArr[1], 10, 64)
@@ -96,7 +103,7 @@ func main() {
 			buttonsLen := redis.GetArticlesLen(keyword)
 
 			if buttonsLen > 1 {
-				replyMarkup := MakeReplyMarkupSmart(keyword, buttonsLen, indexInt)
+				replyMarkup := MakeReplyMarkup(keyword, buttonsLen, indexInt)
 				conf.ReplyMarkup = &replyMarkup
 			}
 
@@ -129,7 +136,7 @@ func main() {
 		captureErrorIfNotNull(err)
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
 		if len(articles) > 1 {
-			msg.ReplyMarkup = MakeReplyMarkupSmart(searchWord, len(articles), 0)
+			msg.ReplyMarkup = MakeReplyMarkup(searchWord, len(articles), 0)
 		}
 		msg.ParseMode = "html"
 		_, err := bot.Send(msg)
