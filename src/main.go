@@ -71,7 +71,7 @@ func main() {
 
 		if update.Message == nil && update.CallbackQuery != nil {
 			inrec, _ := json.Marshal(update)
-			jsonStrMsg := strings.ReplaceAll(string(inrec), "null", "\"null\"")
+			jsonStrMsg := strings.Replace(string(inrec), "null", "\"null\"", -1)
 			log.WithFields(log.Fields{
 				"event_type":          "incoming_message",
 				"telegram_message":    jsonStrMsg,
@@ -108,7 +108,7 @@ func main() {
 			continue
 		}
 		inrec, _ := json.Marshal(update)
-		jsonStrMsg := strings.ReplaceAll(string(inrec), "null", "\"null\"")
+		jsonStrMsg := strings.Replace(string(inrec), "null", "\"null\"", -1)
 		log.WithFields(log.Fields{
 			"event_type":          "incoming_message",
 			"telegram_message":    jsonStrMsg,
