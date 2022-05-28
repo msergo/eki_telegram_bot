@@ -21,8 +21,8 @@ func captureErrorIfNotNull(err error) {
 	}
 	log.WithFields(log.Fields{
 		"event_type":          "app_event",
-		"telegram_message":    nil,
-		"article_search_type": "nil",
+		"telegram_message":    "",
+		"article_search_type": "",
 	}).Error(err.Error())
 	sentry.CaptureException(err)
 }
@@ -50,11 +50,6 @@ func main() {
 
 	bot.Debug = false
 
-	//log.WithFields(log.Fields{
-	//	"event_type":          "app_event",
-	//	"telegram_message":    nil,
-	//	"article_search_type": "nil",
-	//}).Info("Authorized on account %s", bot.Self.UserName)
 	if environment.Env != "dev" {
 		_, err = bot.SetWebhook(tgbotapi.NewWebhook(environment.WebhookAddress))
 		captureErrorIfNotNull(err)
@@ -63,8 +58,8 @@ func main() {
 		if info.LastErrorDate != 0 {
 			log.WithFields(log.Fields{
 				"event_type":          "app_event",
-				"telegram_message":    nil,
-				"article_search_type": "nil",
+				"telegram_message":    "",
+				"article_search_type": "",
 			}).Error("Telegram callback failed: %s", info.LastErrorMessage)
 		}
 	}
@@ -72,16 +67,14 @@ func main() {
 	updates := bot.ListenForWebhook("/" + environment.UuidToken)
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
-	var updateInterface map[string]interface{}
-
 	for update := range updates {
 
 		if update.Message == nil && update.CallbackQuery != nil {
 			inrec, _ := json.Marshal(update)
-			json.Unmarshal(inrec, &updateInterface)
+			jsonStrMsg := strings.Replace(string(inrec), "null", "\"null\"", -1)
 			log.WithFields(log.Fields{
 				"event_type":          "incoming_message",
-				"telegram_message":    updateInterface,
+				"telegram_message":    jsonStrMsg,
 				"article_search_type": "article_switch",
 			}).Info()
 			conf := &tgbotapi.EditMessageTextConfig{}
@@ -115,10 +108,10 @@ func main() {
 			continue
 		}
 		inrec, _ := json.Marshal(update)
-		json.Unmarshal(inrec, &updateInterface)
+		jsonStrMsg := strings.Replace(string(inrec), "null", "\"null\"", -1)
 		log.WithFields(log.Fields{
 			"event_type":          "incoming_message",
-			"telegram_message":    updateInterface,
+			"telegram_message":    jsonStrMsg,
 			"article_search_type": "new_search",
 		}).Info()
 
