@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"time"
-
 	"github.com/go-redis/redis"
 )
 
@@ -42,7 +40,6 @@ func (r RedisWorker) StoreArticlesSet(key string, articles []string) {
 	for i := len(articles) - 1; i >= 0; i-- {
 		r.client.LPush(key, articles[i]).Err()
 	}
-	r.client.Expire(key, time.Hour*48)
 }
 
 func (r RedisWorker) GetAllArticles(key string) []string {

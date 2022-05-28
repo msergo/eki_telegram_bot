@@ -1,4 +1,5 @@
-FROM iron/go:dev
+FROM golang:1.14-alpine
+RUN apk add --no-cache wget curl git build-base
 RUN curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 RUN mkdir -p $GOPATH/src/github.com/msergo/eki_telegram_bot
 COPY . $GOPATH/src/github.com/msergo/eki_telegram_bot
