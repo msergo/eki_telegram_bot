@@ -22,7 +22,7 @@ jobs:
           command: |
             if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
                curl https://sentry.io/api/0/organizations/${SENTRY_ORG}/releases/ \
-                  -H 'Authorization: Bearer ${SENTRY_AUTH_TOKEN}' \
+                  -H 'Authorization: Bearer "${SENTRY_AUTH_TOKEN}"' \
                   -H 'Content-Type: application/json' \
                   -d '{"version":"${CIRCLE_SHA1}","ref":"${CIRCLE_PULL_REQUEST}","projects":["${SENTRY_PROJECT}"]}'
             fi
