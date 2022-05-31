@@ -17,3 +17,12 @@ jobs:
               docker login -u $DOCKER_USER -p $DOCKER_PASS && \
               docker push msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH}
             fi
+      - run:
+          name: Create Sentry release
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+               curl https://sentry.io/api/0/organizations/${SENTRY_ORG}/releases/ \
+                  -H 'Authorization: Bearer ${SENTRY_AUTH_TOKEN}' \
+                  -H 'Content-Type: application/json' \
+                  -d '{"version":"${CIRCLE_SHA1}","ref":"${CIRCLE_PULL_REQUEST}","projects":["${SENTRY_PROJECT}"]}'
+            fi
