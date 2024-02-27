@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"strconv"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
 func MakeReplyMarkup(keyword string, buttonsLen int, index int) tgbotapi.InlineKeyboardMarkup {

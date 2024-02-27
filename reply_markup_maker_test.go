@@ -22,7 +22,6 @@ func TestMakeReplyMarkup_len7_index1(t *testing.T) {
 		t.Fail()
 	}
 
-
 }
 
 func TestMakeReplyMarkup_len7_index6(t *testing.T) {
@@ -36,7 +35,6 @@ func TestMakeReplyMarkup_len7_index6(t *testing.T) {
 		t.Fail()
 	}
 }
-
 
 func TestMakeReplyMarkup_len20_index18(t *testing.T) {
 	articlesLen := 20
@@ -82,4 +80,3 @@ func TestMakeReplyMarkup_current_elem_empty_cb(t *testing.T) {
 		t.Fail()
 	}
 }
-
