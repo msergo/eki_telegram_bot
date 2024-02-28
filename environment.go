@@ -11,6 +11,7 @@ type Environment struct {
 	AppPort        string `env:"PORT"`
 	SentryDsn      string `env:"SENTRY_DSN"`
 	Env            string `env:"ENV"`
+	RedisPass      string `env:"REDIS_PASS"`
 
 	Extras env.EnvSet
 }

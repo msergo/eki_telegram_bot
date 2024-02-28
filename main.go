@@ -80,7 +80,6 @@ func main() {
 			}
 
 			redis.StoreArticlesSet(keyword, articles)
-			err = redis.pushToChannel(keyword)
 			captureErrorIfNotNull(err)
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
