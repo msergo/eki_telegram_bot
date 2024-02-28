@@ -11,7 +11,6 @@ type Environment struct {
 	AppPort        string `env:"PORT"`
 	SentryDsn      string `env:"SENTRY_DSN"`
 	Env            string `env:"ENV"`
-	UuidToken      string `env:"UUID_TOKEN"`
 
 	Extras env.EnvSet
 }

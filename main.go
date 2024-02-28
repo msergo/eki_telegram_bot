@@ -58,7 +58,8 @@ func main() {
 		}
 	}
 
-	updates := bot.ListenForWebhook("/" + environment.UuidToken)
+	updates := bot.ListenForWebhook("/")
+
 	go http.ListenAndServe("0.0.0.0:"+environment.AppPort, nil)
 
 	for update := range updates {
