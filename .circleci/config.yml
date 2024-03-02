@@ -1,16 +1,29 @@
-version: 2
+version: 2.1
+
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
+      - image: cimg/go:1.21
 
-    working_directory: /go/src/github.com/msergo/eki_telegram_bot
     steps:
       - setup_remote_docker
       - checkout
-      - run: docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} .
+      - restore_cache:
+          keys:
+            - go-mod-v4-{{ checksum "go.sum" }}
       - run:
-          name: Deploy docker image
+          name: Install Dependencies
+          command: go mod download
+      - save_cache:
+          key: go-mod-v4-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+      - run:
+          name: Run build
+          command: |
+            docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} .
+      - run:
+          name: Push to Docker Hub
           command: |
             if [[ "${CIRCLE_BRANCH}" == "dev" || "${CIRCLE_BRANCH}" == "master" ]]; then
               docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} . && \
@@ -22,3 +35,8 @@ jobs:
                 -H "Content-Type: application/json" \
                 -d '{"version":"'${CIRCLE_BRANCH}'-'${CIRCLE_SHA1}'","ref":"${CIRCLE_PULL_REQUEST}","projects":["'$SENTRY_PROJECT'"]}'
             fi
+
+workflows:
+  default: 
+    jobs:
+      - build
