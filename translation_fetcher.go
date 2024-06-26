@@ -16,6 +16,7 @@ import (
 const (
 	baseURL    = "http://www.eki.ee/dict/evs/index.cgi?Q="
 	baseURLRus = "http://www.eki.ee/dict/ves/index.cgi?Q="
+	baseURLUkr = "http://www.eki.ee/dict/ukraina/index.cgi?Q="
 
 	cartSelector = ".tervikart"
 	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
@@ -46,7 +47,7 @@ func IsMatchingArticle(searchWord string, givenWord string) bool {
 func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 	doc := goquery.NewDocumentFromNode(node)
 	var useCase string
-	if isRussian(searchWord) { // TODO: refactor
+	if isCyrillicScript(searchWord) { // TODO: refactor
 		text := doc.Text()
 		text = strings.Replace(text, ";", "\r\n", -1)
 		useCase = doc.Find(articleUseCaseSelectorRus).Text()
@@ -86,8 +87,9 @@ func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 func GetArticles(searchWord string) []string {
 	// Request the HTML page.
 	var url string
-	if isRussian(searchWord) {
-		url = baseURLRus
+
+	if isCyrillicScript(searchWord) {
+		url = baseURLUkr 
 	} else {
 		url = baseURL
 	}
@@ -120,7 +122,7 @@ func GetArticles(searchWord string) []string {
 	return articles
 }
 
-func isRussian(searchWord string) bool {
+func isCyrillicScript(searchWord string) bool {
 	var rxCyrillic = regexp.MustCompile("^[\u0400-\u04FF\u0500-\u052F]+$")
 	return rxCyrillic.MatchString(searchWord)
 }
