@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	baseURL    = "http://www.eki.ee/dict/evs/index.cgi?Q="
-	baseURLRus = "http://www.eki.ee/dict/ves/index.cgi?Q="
-	baseURLUkr = "http://www.eki.ee/dict/ukraina/index.cgi?Q="
+	baseURLEstRus    = "http://www.eki.ee/dict/evs/index.cgi?Q="
+	baseURLRusEst = "http://www.eki.ee/dict/ves/index.cgi?Q="
+	baseURLEstUkr = "http://www.eki.ee/dict/ukraina/index.cgi?Q="
 
 	cartSelector = ".tervikart"
 	//articleUseCaseSelector = ".leitud_id" //TODO: update tests
@@ -89,9 +89,9 @@ func GetArticles(searchWord string) []string {
 	var url string
 
 	if isCyrillicScript(searchWord) {
-		url = baseURLUkr 
+		url = baseURLRusEst 
 	} else {
-		url = baseURL
+		url = baseURLEstUkr
 	}
 	res, err := http.Get(fmt.Sprintf("%s%s", url, searchWord))
 	captureErrorIfNotNull(err)
