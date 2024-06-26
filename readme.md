@@ -13,3 +13,6 @@ The motivation behind this project was the need for a convenient tool to obtain 
 ## Local run
 Submit BOT_TOKEN and WEBHOOK_ADDRESS to env in the docker-compose.yaml and run it with `docker-compose up`. 
 Now you're able to emulate webhook requests with POST /localhost:8083
+
+## TODO
+ * add Estonian-Ukrainian dict (https://arhiiv.eki.ee/dict/ukraina/index.cgi?...) support
