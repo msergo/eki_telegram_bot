@@ -54,7 +54,7 @@ func TestGetArticles(t *testing.T) {
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping testing in CI environment")
 	}
-	articles := GetArticles("meri")
+	articles := GetArticles("sõna")
 	if len(articles) < 1 {
 		t.Errorf("no articles fetched and parsed")
 	}
