@@ -21,7 +21,7 @@ const (
 	cartSelector              = ".tervikart"
 	articleUseCaseSelector    = ".m.x_m.m"
 	articleUseCaseSelectorRus = ".ms.leitud_id"
-	translationSelector       = ".x_x[lang=\"ru\"]"
+	translationSelector       = ".x_x[lang=\"ru\"]" // TODO: update selectors for UA
 	exampleEstSelector        = ".x_n[lang=\"et\"]"
 	exampleRusSelector        = ".x_qn[lang=\"ru\"]"
 	grammarFormSelector       = ".mv.x_mv.mv[lang=\"et\"]"
