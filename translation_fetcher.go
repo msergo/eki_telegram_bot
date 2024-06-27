@@ -14,17 +14,21 @@ import (
 )
 
 const (
-	baseURL    = "http://www.eki.ee/dict/evs/index.cgi?Q="
-	baseURLRus = "http://www.eki.ee/dict/ves/index.cgi?Q="
-	baseURLUkr = "http://www.eki.ee/dict/ukraina/index.cgi?Q="
+	baseURLEstRus = "http://www.eki.ee/dict/evs/index.cgi?Q="
+	baseURLRusEst = "http://www.eki.ee/dict/ves/index.cgi?Q="
+	baseURLEstUkr = "http://www.eki.ee/dict/ukraina/index.cgi?Q="
 
-	cartSelector = ".tervikart"
+	cartSelector              = ".tervikart"
 	articleUseCaseSelector    = ".m.x_m.m"
 	articleUseCaseSelectorRus = ".ms.leitud_id"
-	translationSelector       = ".x_x[lang=\"ru\"]" // TODO: update selectors for UA
+	translationSelector       = ".x_x[lang=\"ru\"]" 
 	exampleEstSelector        = ".x_n[lang=\"et\"]"
 	exampleRusSelector        = ".x_qn[lang=\"ru\"]"
 	grammarFormSelector       = ".mv.x_mv.mv[lang=\"et\"]"
+
+	articleUseCaseSelectorEstUkr = ".k_m.m"
+	translationSelectorEstUkr    = ".k_x.x[lang=\"uk\"]"
+	grammarFormSelectorEstUkr    = ".k_mv.mv[lang=\"et\"]"
 )
 
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
@@ -42,6 +46,45 @@ func IsMatchingArticle(searchWord string, givenWord string) bool {
 	return isMatch
 }
 
+// TODO: refactor 
+func GetSingleArticleUkr(searchWord string, node *html.Node) (string, bool) {
+	doc := goquery.NewDocumentFromNode(node)
+	var useCase string
+	if isCyrillicScript(searchWord) { // TODO: refactor
+		text := doc.Text()
+		text = strings.Replace(text, ";", "\r\n", -1)
+		useCase = doc.Find(articleUseCaseSelectorRus).Text()
+		if !IsMatchingArticle(searchWord, useCase) {
+			return "", false
+		}
+
+		return text, false
+	}
+	useCase = doc.Find(articleUseCaseSelectorEstUkr).Text()
+	grammarForms := doc.Find(grammarFormSelectorEstUkr).Text()
+	//filter garbage
+	if !IsMatchingArticle(searchWord, useCase) && !IsMatchingArticle(searchWord, grammarForms) {
+		return "", false
+	}
+	var translations []string
+	doc.Find(translationSelectorEstUkr).Each(func(i int, translation *goquery.Selection) {
+		translations = append(translations, translation.Text())
+	})
+
+	if grammarForms == "" {
+		return fmt.Sprintf("<b>%s</b>\r\n%s",
+			useCase,
+			strings.Join(translations, "\r\n"),
+		), false
+	}
+	return fmt.Sprintf("<b>%s</b><i> (%s) </i>\r\n%s",
+			useCase,
+			grammarForms,
+			strings.Join(translations, "\r\n"),
+		),
+		true
+
+}
 // GetSingleArticle get preformatted translation
 func GetSingleArticle(searchWord string, node *html.Node) (string, bool) {
 	doc := goquery.NewDocumentFromNode(node)
@@ -88,9 +131,9 @@ func GetArticles(searchWord string) []string {
 	var url string
 
 	if isCyrillicScript(searchWord) {
-		url = baseURLRus 
+		url = baseURLRusEst
 	} else {
-		url = baseURL
+		url = baseURLEstRus 
 	}
 	res, err := http.Get(fmt.Sprintf("%s%s", url, searchWord))
 	captureErrorIfNotNull(err)
