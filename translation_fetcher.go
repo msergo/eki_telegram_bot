@@ -77,15 +77,14 @@ func GetSingleArticleWithDirection(searchWord string, node *html.Node, direction
 		grammarFormSelector = grammarFormSelectorEst
 		translationSelector = translationSelectorEstRus
 	} else if direction == "rus-est" {
-		articeUseCaseSelector = articleUseCaseSelectorRus
-
-		text := doc.Text()
-		text = strings.Replace(text, ";", "\r\n", -1)
-		useCase = doc.Find(articeUseCaseSelector).Text()
+		useCase = doc.Find(articleUseCaseSelectorRus).Text()
 
 		if !IsMatchingArticle(searchWord, useCase) {
 			return "", false
 		}
+
+		text := doc.Text()
+		text = strings.Replace(text, ";", "\r\n", -1)
 
 		return text, false
 	}
@@ -140,6 +139,13 @@ func GetArticles(searchWord string) []string {
 		doc, err := goquery.NewDocumentFromReader(res.Body)
 		captureErrorIfNotNull(err)
 
+		// Check if the search word is found at all
+		foundArticlesInfo := doc.Find("P.inf").Text()
+
+		if strings.Contains(foundArticlesInfo, "Küsitud kujul või valitud artikli osast otsitut ei leitud, kasutan laiendatud otsingut") {
+			continue
+		}
+
 		doc.Find(cartSelector).Each(func(i int, page *goquery.Selection) {
 			for i := 0; i < len(page.Nodes); i++ {
 				article, isMainArticle := GetSingleArticleWithDirection(searchWord, page.Nodes[i], translationDirection)
@@ -151,9 +157,9 @@ func GetArticles(searchWord string) []string {
 					// prepend ukrainian flag emoji
 					article = "🇺🇦 " + article
 				}
-				
+
 				if isMainArticle {
-					articles = append([]string{article}, articles...) //put main article to the first position
+					articles = append([]string{article}, articles...) // Put main article to the first position
 					continue
 				}
 				articles = append(articles, article)
