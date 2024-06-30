@@ -108,6 +108,42 @@ func GetSingleArticleWithDirection(searchWord string, node *html.Node, direction
 		true
 }
 
+// ParseArticles extracts article from the HTML node doc
+func ParseArticles(doc *goquery.Document, searchWord string, translationDirection string) []string {
+	var articles []string
+
+	// Check if the search word is found at all
+	foundArticlesInfo := doc.Find("P.inf").Text()
+
+	// TODO: define separate filter function
+	// TODO: check cases when found articles are not what we are looking for
+	if strings.Contains(foundArticlesInfo, "Küsitud kujul või valitud artikli osast otsitut ei leitud, kasutan laiendatud otsingut") {
+		return articles
+	}
+
+	doc.Find(cartSelector).Each(func(i int, page *goquery.Selection) {
+		for i := 0; i < len(page.Nodes); i++ {
+			article, isMainArticle := GetSingleArticleWithDirection(searchWord, page.Nodes[i], translationDirection)
+			if article == "" {
+				continue
+			}
+
+			if translationDirection == "est-ukr" {
+				// prepend ukrainian flag emoji
+				article = "🇺🇦 " + article
+			}
+
+			if isMainArticle {
+				articles = append([]string{article}, articles...) // Put main article to the first position
+				continue
+			}
+			articles = append(articles, article)
+		}
+	})
+
+	return articles
+}
+
 // GetArticles fetches HTML page and extract separate word-related articles
 func GetArticles(searchWord string) []string {
 	// Request the HTML page.
@@ -139,32 +175,8 @@ func GetArticles(searchWord string) []string {
 		doc, err := goquery.NewDocumentFromReader(res.Body)
 		captureErrorIfNotNull(err)
 
-		// Check if the search word is found at all
-		foundArticlesInfo := doc.Find("P.inf").Text()
-
-		if strings.Contains(foundArticlesInfo, "Küsitud kujul või valitud artikli osast otsitut ei leitud, kasutan laiendatud otsingut") {
-			continue
-		}
-
-		doc.Find(cartSelector).Each(func(i int, page *goquery.Selection) {
-			for i := 0; i < len(page.Nodes); i++ {
-				article, isMainArticle := GetSingleArticleWithDirection(searchWord, page.Nodes[i], translationDirection)
-				if article == "" {
-					continue
-				}
-
-				if translationDirection == "est-ukr" {
-					// prepend ukrainian flag emoji
-					article = "🇺🇦 " + article
-				}
-
-				if isMainArticle {
-					articles = append([]string{article}, articles...) // Put main article to the first position
-					continue
-				}
-				articles = append(articles, article)
-			}
-		})
+		articlesPerDirection := ParseArticles(doc, searchWord, translationDirection)
+		articles = append(articles, articlesPerDirection...)
 	}
 
 	return articles
