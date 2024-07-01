@@ -77,19 +77,22 @@ func GetSingleArticleWithDirection(searchWord string, node *html.Node, direction
 		grammarFormSelector = grammarFormSelectorEst
 		translationSelector = translationSelectorEstRus
 	} else if direction == "rus-est" {
-		useCase = doc.Find(articleUseCaseSelectorRus).Text()
+		articeUseCaseSelector = articleUseCaseSelectorRus
+	}
 
-		if !IsMatchingArticle(searchWord, useCase) {
-			return "", false
-		}
+	useCase = doc.Find(articeUseCaseSelector).Text()
 
+	if !IsMatchingArticle(searchWord, useCase) {
+		return "", false
+	}
+
+	if direction == "rus-est" {
 		text := doc.Text()
 		text = strings.Replace(text, ";", "\r\n", -1)
 
 		return text, false
 	}
 
-	useCase = doc.Find(articeUseCaseSelector).Text()
 	grammarForms := doc.Find(grammarFormSelector).Text()
 	translations := extractTranslationsFromDoc(doc, searchWord, useCase, translationSelector, grammarFormSelector)
 
