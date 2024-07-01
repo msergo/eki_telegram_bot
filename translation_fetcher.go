@@ -157,8 +157,8 @@ func GetArticles(searchWord string) []string {
 		urls = []string{baseURLRusEst}
 		translationDirections = []string{"rus-est"}
 	} else {
-		urls = []string{baseURLEstRus, baseURLEstUkr}
-		translationDirections = []string{"est-rus", "est-ukr"}
+		urls = []string{baseURLEstUkr, baseURLEstRus}
+		translationDirections = []string{"est-ukr", "est-rus"}
 	}
 
 	var articles []string
@@ -189,3 +189,4 @@ func isCyrillicScript(searchWord string) bool {
 	var rxCyrillic = regexp.MustCompile("^[\u0400-\u04FF\u0500-\u052F]+$")
 	return rxCyrillic.MatchString(searchWord)
 }
+
