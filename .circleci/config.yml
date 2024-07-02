@@ -21,15 +21,16 @@ jobs:
       - run:
           name: Run build
           command: |
-            docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} .
+            docker build -t msergo/eki_telegram_bot:${CIRCLE_BRANCH} .
       - run:
           name: Push to Docker Hub
           command: |
-            if [[ "${CIRCLE_BRANCH}" == "dev" || "${CIRCLE_BRANCH}" == "master" ]]; then
-              docker build -t msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH} . && \
-              docker login -u $DOCKER_USER -p $DOCKER_PASS && \
-              docker push msergo/sergo_bot:${CIRCLE_PROJECT_REPONAME}-${CIRCLE_BRANCH}
-
+            docker login -u $DOCKER_USER -p $DOCKER_PASS && \
+            docker push msergo/eki_telegram_bot:${CIRCLE_BRANCH}
+      - run:
+          name: Create Sentry Release
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
               curl https://sentry.io/api/0/organizations/${SENTRY_ORG}/releases/ \
                 -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
                 -H "Content-Type: application/json" \
@@ -37,6 +38,6 @@ jobs:
             fi
 
 workflows:
-  default: 
+  default:
     jobs:
       - build
