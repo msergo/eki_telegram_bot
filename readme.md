@@ -1,5 +1,5 @@
 # 🇪🇪 Estonian Dictionary Telegram Bot
-[![Build status](https://dl.circleci.com/status-badge/img/gh/msergo/eki_telegram_bot/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/msergo/eki_telegram_bot/tree/dev)
+[![Build status](https://dl.circleci.com/status-badge/img/gh/msergo/eki_telegram_bot/tree/master.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/msergo/eki_telegram_bot/tree/master)
 
 ## About
 
