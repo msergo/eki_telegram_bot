@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 
@@ -162,11 +163,21 @@ func GetArticles(searchWord string) []string {
 	}
 
 	var articles []string
+
 	for i := 0; i < len(urls); i++ {
 		url := urls[i]
 		translationDirection := translationDirections[i]
+		fullURL := fmt.Sprintf("%s%s", url, searchWord)
+		// Create a custom HTTP client with disable TLS verification
+		customTransport := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
 
-		res, err := http.Get(fmt.Sprintf("%s%s", url, searchWord))
+		client := &http.Client{
+			Transport: customTransport,
+		}
+
+		res, err := client.Get(fullURL)
 		captureErrorIfNotNull(err)
 		defer res.Body.Close()
 
@@ -189,4 +200,3 @@ func isCyrillicScript(searchWord string) bool {
 	var rxCyrillic = regexp.MustCompile("^[\u0400-\u04FF\u0500-\u052F]+$")
 	return rxCyrillic.MatchString(searchWord)
 }
-
