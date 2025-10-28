@@ -1,10 +1,11 @@
 package main
 
 import (
+	_ "embed"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"os"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -50,11 +51,35 @@ func TestFiltering(t *testing.T) {
 	}
 }
 
+//go:embed testdata/mock_laps_est-rus.html
+var mockHTMLEstRus string
+
+//go:embed testdata/mock_laps_est-ukr.html
+var mockHTMLEstUkr string
+
+type MockFetcher struct {
+	server *httptest.Server
+}
+
+func (m *MockFetcher) Get(url string) (*http.Response, error) {
+	path := strings.TrimPrefix(url, "http://www.eki.ee")
+	return m.server.Client().Get(m.server.URL + path)
+}
+
 func TestGetArticles(t *testing.T) {
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping testing in CI environment")
-	}
-	articles := GetArticles("laps")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "evs") {
+			w.Write([]byte(mockHTMLEstRus))
+		} else if strings.Contains(r.URL.Path, "ukraina") {
+			w.Write([]byte(mockHTMLEstUkr))
+		} else {
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	fetcher := &MockFetcher{server: server}
+	articles := GetArticles("laps", fetcher)
 	if len(articles) != 2 {
 		t.Errorf("invalid number of articles: %d, expected 2", len(articles))
 	}

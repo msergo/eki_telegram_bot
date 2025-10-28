@@ -32,6 +32,10 @@ const (
 	grammarFormSelectorEstUkr    = ".k_mv.mv[lang=\"et\"]"
 )
 
+type HTTPFetcher interface {
+	Get(url string) (*http.Response, error)
+}
+
 var cleanupRegex, _ = regexp.Compile("[^\\p{L}]+")
 
 func IsMatchingArticle(searchWord string, givenWord string) bool {
@@ -149,7 +153,17 @@ func ParseArticles(doc *goquery.Document, searchWord string, translationDirectio
 }
 
 // GetArticles fetches HTML page and extract separate word-related articles
-func GetArticles(searchWord string) []string {
+func GetArticles(searchWord string, fetcher HTTPFetcher) []string {
+	if fetcher == nil {
+		customTransport := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+
+		fetcher = &http.Client{
+			Transport: customTransport,
+		}
+	}
+
 	// Request the HTML page.
 	var urls []string
 	var translationDirections []string
@@ -168,16 +182,8 @@ func GetArticles(searchWord string) []string {
 		url := urls[i]
 		translationDirection := translationDirections[i]
 		fullURL := fmt.Sprintf("%s%s", url, searchWord)
-		// Create a custom HTTP client with disable TLS verification
-		customTransport := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
 
-		client := &http.Client{
-			Transport: customTransport,
-		}
-
-		res, err := client.Get(fullURL)
+		res, err := fetcher.Get(fullURL)
 		captureErrorIfNotNull(err)
 		defer res.Body.Close()
 
