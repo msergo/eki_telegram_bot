@@ -72,7 +72,7 @@ func main() {
 			articles = redis.GetAllArticles(keyword)
 
 			if len(articles) == 0 {
-				articles = GetArticles(keyword)
+				articles = GetArticles(keyword, nil)
 			}
 
 			if len(articles) == 0 {
