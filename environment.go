@@ -12,6 +12,8 @@ type Environment struct {
 	SentryDsn      string `env:"SENTRY_DSN"`
 	Env            string `env:"ENV"`
 	RedisPass      string `env:"REDIS_PASS"`
+	// CacheEngine selects the active cache backend. Valid values: "sqlite" (default), "redis".
+	CacheEngine string `env:"CACHE_ENGINE,default=sqlite"`
 
 	Extras env.EnvSet
 }

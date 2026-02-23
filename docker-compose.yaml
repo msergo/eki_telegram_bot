@@ -1,19 +1,27 @@
 services:
   redis:
     image: redis:7-alpine
-  eki_ee_bot:
+    profiles:
+      - redis-cache
+
+  eki_ee_bot_redis:
     build:
       context: .
       dockerfile: Dockerfile
+    profiles:
+      - redis-cache
     ports:
       - 8083:8083
     environment:
+      - CACHE_ENGINE=redis
       - REDIS_HOST=redis
       - BOT_TOKEN=
       - WEBHOOK_ADDRESS=
       - PORT=8083
       - SENTRY_DSN=
       - ENV=
+    depends_on:
+      - redis
     logging:
       driver: "json-file"
       options:
@@ -21,3 +29,32 @@ services:
         max-file: "10"
         compress: "true"
         tag: "{{.ImageName}}"
+
+  eki_ee_bot_sqlite:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles:
+      - sqlite-cache
+    ports:
+      - 8083:8083
+    environment:
+      - CACHE_ENGINE=sqlite
+      - BOT_TOKEN=
+      - WEBHOOK_ADDRESS=
+      - PORT=8083
+      - SENTRY_DSN=
+      - ENV=
+    volumes:
+      - sqlite_data:/root/cache
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+        compress: "true"
+        tag: "{{.ImageName}}"
+
+volumes:
+  sqlite_data:
+
