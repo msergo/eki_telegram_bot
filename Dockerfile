@@ -1,13 +1,16 @@
 FROM golang:1.23-alpine
 ENV CI=true
 
+# gcc and musl-dev are required for CGO (go-sqlite3)
+RUN apk add --no-cache gcc musl-dev
+
 RUN mkdir -p $GOPATH/src/github.com/msergo/eki_telegram_bot
 WORKDIR $GOPATH/src/github.com/msergo/eki_telegram_bot
 COPY . .
 RUN go mod tidy
-RUN go test -vet=off -v ./...
+RUN CGO_ENABLED=1 go test -vet=off -v ./...
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./cmd/main 
+RUN CGO_ENABLED=1 GOOS=linux go build -o ./cmd/main
 
 
 FROM alpine:3.19

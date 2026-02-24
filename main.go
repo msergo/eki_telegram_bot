@@ -2,7 +2,10 @@ package main
 
 import (
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 
@@ -33,9 +36,22 @@ func main() {
 		ServerName:       environment.WebhookAddress,
 	})
 
-	redis := InitRedisWorker()
-	_, err = redis.Ping()
-	captureErrorIfNotNull(err)
+	cacheEngine, err := NewCacheEngine(environment.CacheEngine)
+	if err != nil {
+		captureErrorIfNotNull(err)
+		log.Panic(err)
+	}
+	defer cacheEngine.Close()
+
+	// Graceful shutdown on SIGINT / SIGTERM.
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+		log.Info("Shutting down – closing cache engine")
+		cacheEngine.Close()
+		os.Exit(0)
+	}()
 
 	bot, err := tgbotapi.NewBotAPI(environment.BotToken)
 	captureErrorIfNotNull(err)
@@ -69,7 +85,8 @@ func main() {
 			var articles []string
 
 			keyword := strings.ToLower(update.Message.Text)
-			articles = redis.GetAllArticles(keyword)
+			articles, err = cacheEngine.GetAllArticles(keyword)
+			captureErrorIfNotNull(err)
 
 			if len(articles) == 0 {
 				articles = GetArticles(keyword, nil)
@@ -79,7 +96,7 @@ func main() {
 				continue
 			}
 
-			redis.StoreArticlesSet(keyword, articles)
+			err = cacheEngine.StoreArticles(keyword, articles)
 			captureErrorIfNotNull(err)
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, articles[0])
@@ -111,9 +128,11 @@ func main() {
 			conf.ChatID = update.CallbackQuery.Message.Chat.ID
 
 			keyword, index := getKeywordAndIndex(update.CallbackQuery.Data)
-			conf.Text = redis.GetArticleByIndex(keyword, index)
+			conf.Text, err = cacheEngine.GetArticleByIndex(keyword, index)
+			captureErrorIfNotNull(err)
 
-			replyButtonsCnt := redis.GetArticlesLen(keyword)
+			replyButtonsCnt, err := cacheEngine.GetArticlesLen(keyword)
+			captureErrorIfNotNull(err)
 
 			if replyButtonsCnt > 1 {
 				replyMarkup := MakeReplyMarkup(keyword, replyButtonsCnt, int(index))
@@ -121,7 +140,7 @@ func main() {
 				conf.ReplyMarkup = &replyMarkup
 			}
 
-			_, err := bot.Send(conf)
+			_, err = bot.Send(conf)
 			captureErrorIfNotNull(err)
 
 			_, err = bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, "done"))
