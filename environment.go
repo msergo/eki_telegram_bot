@@ -14,6 +14,8 @@ type Environment struct {
 	RedisPass      string `env:"REDIS_PASS"`
 	// CacheEngine selects the active cache backend. Valid values: "sqlite" (default), "redis".
 	CacheEngine string `env:"CACHE_ENGINE,default=sqlite"`
+	// SqliteDbPath specifies the path to the SQLite database file. Default: "./cache.db".
+	SqliteDbPath string `env:"SQLITE_DB_PATH,default=./cache.db"`
 
 	Extras env.EnvSet
 }

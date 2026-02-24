@@ -27,7 +27,7 @@ func NewCacheEngine(engineType string) (CacheEngine, error) {
 		return worker, nil
 
 	case "sqlite", "":
-		engine, err := InitSQLiteWorker("./cache.db")
+		engine, err := InitSQLiteWorker(environment.SqliteDbPath)
 		if err != nil {
 			return nil, fmt.Errorf("sqlite init failed: %w", err)
 		}
