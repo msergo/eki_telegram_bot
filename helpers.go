@@ -33,7 +33,9 @@ func isNewSearchRequest(update tgbotapi.Update) bool {
 
 func logIncomingMessage(update tgbotapi.Update) {
 	jsonUpdate, _ := json.Marshal(update)
-	jsonStringEscaped := strings.Replace(string(jsonUpdate), "null", "\"null\"", -1)
+	// Replace null with "null" string representation
+	jsonWithStringNull := strings.Replace(string(jsonUpdate), "null", "\"null\"", -1)
+	// Use RawMessage to prevent double-escaping by logrus
 	var articleSearchType string
 
 	if isCallbackQuery(update) {
@@ -44,7 +46,7 @@ func logIncomingMessage(update tgbotapi.Update) {
 
 	log.WithFields(log.Fields{
 		"event_type":          "incoming_message",
-		"telegram_message":    jsonStringEscaped,
+		"telegram_message":    json.RawMessage(jsonWithStringNull),
 		"article_search_type": articleSearchType,
 	}).Info()
 }
