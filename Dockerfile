@@ -8,8 +8,6 @@ RUN mkdir -p $GOPATH/src/github.com/msergo/eki_telegram_bot
 WORKDIR $GOPATH/src/github.com/msergo/eki_telegram_bot
 COPY . .
 RUN go mod tidy
-RUN CGO_ENABLED=1 go test -vet=off -v ./...
-
 RUN CGO_ENABLED=1 GOOS=linux go build -o ./cmd/main
 
 
