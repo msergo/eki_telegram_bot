@@ -1,12 +1,11 @@
 version: 2.1
 
 jobs:
-  build:
+  test:
     docker:
-      - image: cimg/go:1.21
+      - image: cimg/go:1.23
 
     steps:
-      - setup_remote_docker
       - checkout
       - restore_cache:
           keys:
@@ -19,13 +18,21 @@ jobs:
           paths:
             - "/go/pkg/mod"
       - run:
-          name: Run build
+          name: Run tests
+          command: CGO_ENABLED=1 go test -race -v ./...
+
+  build:
+    docker:
+      - image: cimg/go:1.23
+
+    steps:
+      - setup_remote_docker
+      - checkout
+      - run:
+          name: Build and push Docker image
           command: |
             docker build -t msergo/eki_telegram_bot:${CIRCLE_BRANCH} .
-      - run:
-          name: Push to Docker Hub
-          command: |
-            docker login -u $DOCKER_USER -p $DOCKER_PASS && \
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
             docker push msergo/eki_telegram_bot:${CIRCLE_BRANCH}
       - run:
           name: Create Sentry Release
@@ -40,4 +47,7 @@ jobs:
 workflows:
   default:
     jobs:
-      - build
+      - test
+      - build:
+          requires:
+            - test
